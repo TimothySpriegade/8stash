@@ -25,7 +25,7 @@ func main() {
 	case "help":
 		service.PrintHelp()
 	case "push":
-		fmt.Println("StashPass Push")
+		service.HandlePush()
 	case "pop":
 		fmt.Println("StashPass Pop")
 	case "list":
