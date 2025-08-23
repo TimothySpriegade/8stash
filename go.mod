@@ -1,4 +1,4 @@
-module StashPass
+module stashpass
 
 go 1.24
 

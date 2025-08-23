@@ -1,10 +1,10 @@
 package main
 
 import (
-	service "StashPass/service"
-	validation "StashPass/validation"
 	"fmt"
 	"os"
+	service "stashpass/service"
+	validation "stashpass/validation"
 
 	flag "github.com/spf13/pflag"
 )
