@@ -1,6 +1,7 @@
 package main
 
 import (
+	service "StashPass/service"
 	validation "StashPass/validation"
 	"fmt"
 	"os"
@@ -22,11 +23,11 @@ func main() {
 
 	switch operation {
 	case "help":
-		fmt.Println("StashPass Help:")
-	case "pop":
-		fmt.Println("StashPass Pop")
+		service.PrintHelp()
 	case "push":
 		fmt.Println("StashPass Push")
+	case "pop":
+		fmt.Println("StashPass Pop")
 	case "list":
 		fmt.Println("StashPass List")
 	case "delete":
