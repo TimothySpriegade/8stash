@@ -22,6 +22,9 @@ work-in-progress changes, push them to a remote branch, and share them with othe
 efficient, and integrate seamlessly into a developer's workflow.  
 Go was chosen as the language for 8Stash because its simplicity, speed, and portability align perfectly with the
 project's goal of creating a reliable and efficient command-line tool for developers.
+<h1>
+</h1>
+
 ### Installation and Usage
 
 ### Contribute
