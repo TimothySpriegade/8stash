@@ -8,11 +8,11 @@ import (
 )
 
 var operationStashArgsRequirement = map[string]bool{
-	"pop":    false,
-	"delete": true,
-	"push":   false,
-	"list":   false,
-	"help":   false,
+	"pop":  false,
+	"drop": true,
+	"push": false,
+	"list": false,
+	"help": false,
 }
 
 func isValidOperation(op string) bool {

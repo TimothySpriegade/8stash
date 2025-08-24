@@ -13,7 +13,7 @@ func PrintHelp() {
 	fmt.Println("                   	if there are multiple stashes, it will list them and ask which one to pop")
 	fmt.Println("  push             	pushes your current local changes to a new remote stash ")
 	fmt.Println("  list             	List all current stashes with their respective numbers")
-	fmt.Println("  delete <number>  	Delete the remote stash with the specified number")
+	fmt.Println("  drop <number>  		Delete the remote stash with the specified number")
 	fmt.Println(spacer)
 	fmt.Println("default behavior if no command is provided:")
 	fmt.Println("8stash will attempt to push your current local changes to a new remote stash.")

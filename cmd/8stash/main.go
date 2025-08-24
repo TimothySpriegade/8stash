@@ -20,32 +20,43 @@ func main() {
 func Init() int {
 	flag.Parse()
 	args := flag.Args()
+
 	operation, stashNumber, validationError = validation.ArgValidation(args)
 	if validationError != nil {
-		panic(validationError)
+		fmt.Fprintf(os.Stderr, "Argument error: %v\n", validationError)
+		return 1
 	}
 
 	switch operation {
 	case "help":
-		service.PrintHelp()
-		return 0
+		return help()
 	case "push":
-		var stashName, err = service.HandlePush()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error during push operation: %v\n", err)
-			return 1
-		}
-		fmt.Printf("Changes stashed to new branch: %s\n", stashName)
-		return 0
+		return push()
 	case "pop":
 		fmt.Println("8stash Pop")
 	case "list":
 		fmt.Println("8stash List")
-	case "delete":
+	case "drop":
 		fmt.Println("8stash Delete")
 	default:
 		fmt.Println("Unknown operation \"%s\".\n", operation)
 		os.Exit(1)
 	}
 	return 0
+}
+
+func help() int {
+	service.PrintHelp()
+	return 0
+}
+
+func push() int {
+	var stashName, err = service.HandlePush()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error during push operation: %v\n", err)
+		return 1
+	}
+	fmt.Printf("Changes stashed to new branch: %s\n", stashName)
+	return 0
+
 }
