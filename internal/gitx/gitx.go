@@ -1,10 +1,9 @@
-package helper
+package gitx
 
 import (
 	"errors"
 	"fmt"
-	"os"
-	"stashpass/validation"
+	"stashpass/internal/validation"
 	"time"
 
 	"github.com/go-git/go-git/v6"
@@ -66,21 +65,20 @@ func updateRepository() error {
 	}
 }
 
-func PrepareRepository() {
-	if !validation.IsGitRepository() {
-		fmt.Fprintln(os.Stderr, "Not a Git repository.")
-		os.Exit(1)
+func PrepareRepository() error {
+	if err := validation.IsGitRepository(); err != nil {
+		return err
 	}
 
 	if err := updateRepository(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
 
-	if !validation.HasChanges() {
-		fmt.Println("No changes to local repository.")
-		os.Exit(0)
+	if err := validation.HasChanges(); err != nil {
+		return err
 	}
+
+	return nil
 }
 
 func StashChangesToNewBranch(branchName string) error {
