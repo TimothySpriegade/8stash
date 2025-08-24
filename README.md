@@ -27,4 +27,11 @@ project's goal of creating a reliable and efficient command-line tool for develo
 
 ### Installation and Usage
 
+<h1>
+</h1>
+
 ### Contribute
+
+<h1>
+</h1>
+
