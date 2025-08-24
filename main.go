@@ -25,7 +25,8 @@ func main() {
 	case "help":
 		service.PrintHelp()
 	case "push":
-		service.HandlePush()
+		var stashName = service.HandlePush()
+		fmt.Printf("Changes stashed to new branch: %s\n", stashName)
 	case "pop":
 		fmt.Println("StashPass Pop")
 	case "list":

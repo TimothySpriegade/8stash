@@ -4,7 +4,7 @@ go 1.24
 
 require github.com/spf13/pflag v1.0.7
 
-require github.com/google/go-github/v74 v74.0.0
+require github.com/go-git/go-git/v6 v6.0.0-20250819122726-39261590f7f3
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
@@ -15,7 +15,6 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg/v2 v2.0.2 // indirect
 	github.com/go-git/go-billy/v6 v6.0.0-20250627091229-31e2a16eef30 // indirect
-	github.com/go-git/go-git/v6 v6.0.0-20250819122726-39261590f7f3 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/pjbgf/sha1cd v0.4.0 // indirect
