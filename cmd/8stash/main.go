@@ -1,10 +1,10 @@
 package main
 
 import (
+	service "8stash/internal/service"
+	"8stash/internal/validation"
 	"fmt"
 	"os"
-	service "stashpass/internal/service"
-	"stashpass/internal/validation"
 
 	flag "github.com/spf13/pflag"
 )
@@ -38,11 +38,11 @@ func Init() int {
 		fmt.Printf("Changes stashed to new branch: %s\n", stashName)
 		return 0
 	case "pop":
-		fmt.Println("StashPass Pop")
+		fmt.Println("8stash Pop")
 	case "list":
-		fmt.Println("StashPass List")
+		fmt.Println("8stash List")
 	case "delete":
-		fmt.Println("StashPass Delete")
+		fmt.Println("8stash Delete")
 	default:
 		fmt.Println("Unknown operation \"%s\".\n", operation)
 		os.Exit(1)

@@ -1,8 +1,8 @@
 package service
 
 import (
-	"stashpass/internal/gitx"
-	"stashpass/internal/naming"
+	"8stash/internal/gitx"
+	"8stash/internal/naming"
 )
 
 func HandlePush() (string, error) {

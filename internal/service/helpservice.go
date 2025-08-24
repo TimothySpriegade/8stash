@@ -5,7 +5,7 @@ import "fmt"
 const spacer = "--------------------------------------------------------------------------------------------------------"
 
 func PrintHelp() {
-	fmt.Println("Welcome to StashPass Help!")
+	fmt.Println("Welcome to 8stash Help!")
 	fmt.Println(spacer)
 	fmt.Println("Available commands:")
 	fmt.Println("  help             	Show this help message")
@@ -16,6 +16,6 @@ func PrintHelp() {
 	fmt.Println("  delete <number>  	Delete the remote stash with the specified number")
 	fmt.Println(spacer)
 	fmt.Println("default behavior if no command is provided:")
-	fmt.Println("StashPass will attempt to push your current local changes to a new remote stash.")
+	fmt.Println("8stash will attempt to push your current local changes to a new remote stash.")
 	fmt.Println(spacer)
 }

@@ -35,7 +35,7 @@ func ArgValidation(args []string) (string, int, error) {
 	}
 	operation = args[0]
 	if !isValidOperation(operation) {
-		fmt.Println("Invalid operation: " + operation + ". If you need help, run stashpass help")
+		fmt.Println("Invalid operation: " + operation + ". If you need help, run 8stash help")
 		os.Exit(1)
 	}
 

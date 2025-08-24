@@ -1,9 +1,9 @@
 package gitx
 
 import (
+	"8stash/internal/validation"
 	"errors"
 	"fmt"
-	"stashpass/internal/validation"
 	"time"
 
 	"github.com/go-git/go-git/v6"
@@ -133,7 +133,7 @@ func StashChangesToNewBranch(branchName string) error {
 		fmt.Sprintf("move local changes to branch %s", branchName),
 		&git.CommitOptions{
 			Author: &object.Signature{
-				Name:  "stashpass",
+				Name:  "8stash",
 				Email: "noreply@local",
 				When:  time.Now(),
 			},
