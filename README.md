@@ -1,10 +1,10 @@
 <div align="center">
-    <img src=".github/readme/8Stash Banner.png" alt="8Stash Banner">
-    <br/>
-    <strong>Your work-in-progress, saved and shareable.</strong>
+    <h1>
+        <img src=".github/readme/8Stash Banner.png" alt="8Stash Banner">
+        <br/>
+        <strong>Your work-in-progress, saved and shareable.</strong>
+    </h1>
 </div>
-
----
 
 ### About 8Stash
 
