@@ -35,12 +35,20 @@ func Init() int {
 	case "pop":
 		fmt.Println("8stash Pop")
 	case "list":
-		fmt.Println("8stash List")
+		return list()
 	case "drop":
 		fmt.Println("8stash Delete")
 	default:
 		fmt.Println("Unknown operation \"%s\".\n", operation)
 		os.Exit(1)
+	}
+	return 0
+}
+
+func list() int {
+	if err := service.HandleList(); err != nil {
+		fmt.Println("Error fetching 8stashes")
+		return 1
 	}
 	return 0
 }

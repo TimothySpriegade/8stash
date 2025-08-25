@@ -1,8 +1,8 @@
 package validation
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -31,19 +31,19 @@ func ArgValidation(args []string) (string, int, error) {
 
 	if len(args) < 1 {
 		fmt.Println("No operation provided")
-		os.Exit(1)
+		return "", 0, errors.New("no operation provided")
 	}
 	operation = args[0]
 	if !isValidOperation(operation) {
 		fmt.Println("Invalid operation: " + operation + ". If you need help, run 8stash help")
-		os.Exit(1)
+		return "", 0, errors.New("invalid operation")
 	}
 
 	hasStashNumberArg := len(args) > 1
 
 	if stashNumberIsRequiered(operation) && !hasStashNumberArg {
 		fmt.Printf("Error: The '%s' operation requires a stash number.\n", operation)
-		os.Exit(1)
+		return "", 0, errors.New("operation requires a stash number")
 	}
 
 	if len(args) > 1 {
@@ -51,7 +51,7 @@ func ArgValidation(args []string) (string, int, error) {
 		stashNumber, err = strconv.Atoi(args[1])
 		if err != nil {
 			fmt.Println("Error: Invalid number provided for stash number.", err)
-			os.Exit(1)
+			return "", 0, err
 		}
 	}
 

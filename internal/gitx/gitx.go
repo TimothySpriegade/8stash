@@ -43,7 +43,7 @@ func getRepoContext() (*git.Repository, *git.Worktree, string, string, error) {
 	return repo, wt, branch, remote, nil
 }
 
-func updateRepository() error {
+func UpdateRepository() error {
 	_, wt, branch, remote, err := getRepoContext()
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func PrepareRepository() error {
 		return err
 	}
 
-	if err := updateRepository(); err != nil {
+	if err := UpdateRepository(); err != nil {
 		return err
 	}
 
