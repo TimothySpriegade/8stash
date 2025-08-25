@@ -4,6 +4,7 @@ import (
 	"8stash/internal/validation"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-git/go-git/v6"
@@ -164,4 +165,52 @@ func StashChangesToNewBranch(branchName string) error {
 	}
 
 	return nil
+}
+
+func GetBranchesWithStringName(prefix string) (map[string]string, error) {
+	repo, _, _, _, err := getRepoContext()
+	if err != nil {
+		return nil, err
+	}
+
+	refs, err := repo.References()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get references: %w", err)
+	}
+
+	branches := make(map[string]string)
+	now := time.Now()
+
+	err = refs.ForEach(func(ref *plumbing.Reference) error {
+		if ref.Name().IsBranch() {
+			branchName := ref.Name().Short()
+
+			if prefix == "" || strings.HasPrefix(branchName, prefix) {
+				commit, err := repo.CommitObject(ref.Hash())
+				if err != nil {
+					return fmt.Errorf("failed to get commit for branch %s: %w", branchName, err)
+				}
+
+				timeSince := now.Sub(commit.Author.When)
+
+				var timeStr string
+				days := int(timeSince.Hours() / 24)
+				if days > 0 {
+					timeStr = fmt.Sprintf("%d days ago", days)
+				} else {
+					minutes := int(timeSince.Minutes())
+					timeStr = fmt.Sprintf("%dmin ago", minutes)
+				}
+
+				branches[branchName] = timeStr
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error processing references: %w", err)
+	}
+
+	return branches, nil
 }
