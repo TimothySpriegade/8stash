@@ -66,5 +66,4 @@ func push() int {
 	}
 	fmt.Printf("Changes stashed to new branch: %s\n", stashName)
 	return 0
-
 }
