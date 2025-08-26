@@ -82,11 +82,7 @@ func PrepareRepository() error {
 	return nil
 }
 
-func StashChangesToNewBranch(branchName string) error {
-	repo, wt, origBranch, remote, err := getRepoContext()
-	if err != nil {
-		return err
-	}
+func validateBranch(branchName string, origBranch string, repo *git.Repository) error {
 	if branchName == "" {
 		return fmt.Errorf("branch name must not be empty")
 	}
@@ -101,16 +97,10 @@ func StashChangesToNewBranch(branchName string) error {
 		return err
 	}
 
-	// Create and switch to the new branch, keeping current changes.
-	if err := wt.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branchName),
-		Create: true,
-		Keep:   true,
-	}); err != nil {
-		return err
-	}
+	return nil
+}
 
-	// Stage everything (adds, mods, deletions).
+func stageChanges(wt *git.Worktree) error {
 	status, err := wt.Status()
 	if err != nil {
 		return err
@@ -128,8 +118,10 @@ func StashChangesToNewBranch(branchName string) error {
 			return err
 		}
 	}
+	return nil
+}
 
-	// Commit on the new branch.
+func commitChanges(wt *git.Worktree, branchName string) error {
 	if _, err := wt.Commit(
 		fmt.Sprintf("move local changes to branch %s", branchName),
 		&git.CommitOptions{
@@ -142,8 +134,10 @@ func StashChangesToNewBranch(branchName string) error {
 	); err != nil {
 		return err
 	}
+	return nil
+}
 
-	// Push the new branch to its remote.
+func pushChanges(remote string, repo *git.Repository, branchName string) error {
 	pushOpts := &git.PushOptions{
 		RemoteName: remote,
 		RefSpecs:   []config.RefSpec{config.RefSpec("refs/heads/" + branchName + ":refs/heads/" + branchName)},
@@ -154,13 +148,46 @@ func StashChangesToNewBranch(branchName string) error {
 	if err := repo.Push(pushOpts); err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
 		return fmt.Errorf("push failed: %w", err)
 	}
+	return nil
+}
 
-	// Switch back to the original branch, discarding working changes there.
+func swtichToBranch(branchName string, wt *git.Worktree) error {
 	if err := wt.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(origBranch),
+		Branch: plumbing.NewBranchReferenceName(branchName),
 		Force:  true,
 		Keep:   false,
 	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func StashChangesToNewBranch(newBranchName string) error {
+	repo, wt, origBranch, remote, err := getRepoContext()
+	if err != nil {
+		return err
+	}
+	if err := validateBranch(newBranchName, origBranch, repo); err != nil {
+		return err
+	}
+	// Create and switch to the new branch, keeping current changes.
+	if err := swtichToBranch(newBranchName, wt); err != nil {
+		return err
+	}
+	// Stage everything (adds, mods, deletions).
+	if err := stageChanges(wt); err != nil {
+		return err
+	}
+	// Commit on the new branch.
+	if err := commitChanges(wt, newBranchName); err != nil {
+		return err
+	}
+	// Push the new branch to its remote.
+	if err := pushChanges(remote, repo, newBranchName); err != nil {
+		return err
+	}
+	// Switch back to the original branch, discarding working changes there.
+	if err := swtichToBranch(origBranch, wt); err != nil {
 		return err
 	}
 

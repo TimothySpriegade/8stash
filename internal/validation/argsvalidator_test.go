@@ -21,7 +21,7 @@ func TestIsvalidOperation(t *testing.T) {
 	}
 }
 
-func TestStashNumberIsRequiered(t *testing.T) {
+func TestStashNumberIsRequired(t *testing.T) {
 	tests := []struct {
 		operation string
 		expected  bool
