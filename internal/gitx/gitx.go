@@ -151,6 +151,14 @@ func pushChanges(remote string, repo *git.Repository, branchName string) error {
 	return nil
 }
 
+func createNewBranchAndSwitch(branchName string, wt *git.Worktree) error {
+	return wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(branchName),
+		Create: true,
+		Keep:   true,
+	})
+}
+
 func switchToBranch(branchName string, wt *git.Worktree) error {
 	if err := wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(branchName),
@@ -170,8 +178,8 @@ func StashChangesToNewBranch(newBranchName string) error {
 	if err := validateBranch(newBranchName, origBranch, repo); err != nil {
 		return err
 	}
-	// Create and switch to the new branch, keeping current changes.
-	if err := switchToBranch(newBranchName, wt); err != nil {
+
+	if err := createNewBranchAndSwitch(newBranchName, wt); err != nil {
 		return err
 	}
 	// Stage everything (adds, mods, deletions).
