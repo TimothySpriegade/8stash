@@ -29,9 +29,13 @@ func HasChanges() error {
 		return fmt.Errorf(OpeningRepoErrorMessage+" %v\n", err)
 	}
 
-	_, err = worktree.Status()
+	status, err := worktree.Status()
 	if err != nil {
 		return fmt.Errorf(OpeningRepoErrorMessage+" %v\n", err)
+	}
+
+	if status.IsClean() {
+		return errors.New("no changes detected in working tree")
 	}
 
 	return nil
