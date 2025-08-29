@@ -39,7 +39,7 @@ func Init() int {
 	case "drop":
 		fmt.Println("8stash Delete")
 	default:
-		fmt.Println("Unknown operation \"%s\".\n", operation)
+		fmt.Fprintf(os.Stderr, "Unknown operation: %v\n", operation)
 		os.Exit(1)
 	}
 	return 0
