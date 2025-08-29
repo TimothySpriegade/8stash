@@ -336,7 +336,7 @@ func TestPrepareRepository_NotARepo(t *testing.T) {
 	require.Error(t, err) // fails validation when not a repository
 }
 
-func TestPrepareRepository_CleanRepo_NoChanges_Error(t *testing.T) {
+func TestPrepareRepository_CleanRepo_NoChanges(t *testing.T) {
 	// Arrange
 	_, cleanup := setupTestRepo(t)
 	defer cleanup()
@@ -345,7 +345,7 @@ func TestPrepareRepository_CleanRepo_NoChanges_Error(t *testing.T) {
 	err := PrepareRepository()
 
 	// Assert
-	require.NoError(t, err) // clean repo passes PrepareRepository
+	require.Error(t, err)
 }
 
 func TestPrepareRepository_PropagatesUpdateError(t *testing.T) {
