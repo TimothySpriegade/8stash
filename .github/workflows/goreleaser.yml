@@ -2,21 +2,56 @@ name: goreleaser.yml
 on:
   push:
     tags:
-      - '*'
-    branches:
-      - main
+      - 'v*'
 permissions:
   contents: write
 
 jobs:
-  tests:
-    name: run tests
+  verify:
     runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.check.outputs.allowed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag points to main
+        id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          TAG_COMMIT="$(git rev-parse "${GITHUB_SHA}^{commit}")"
+          if git merge-base --is-ancestor "$TAG_COMMIT" origin/main; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag does not point to a commit on main; skipping."
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  tests:
+    needs: verify
+    if: needs.verify.outputs.allowed == 'true'
+    uses: ./.github/workflows/go-tests.yml
+    with:
+      go-version-file: 'go.mod'
+
+  build:
+    needs: verify
+    if: needs.verify.outputs.allowed == 'true'
+    uses: ./.github/workflows/go-build.yml
+    with:
+      go-version-file: 'go.mod'
 
   goreleaser:
-    needs: tests
-    name: goreleaser
+    needs: [verify, tests, build]
+    if: needs.verify.outputs.allowed == 'true'
+    name: Release New Version
     runs-on: ubuntu-latest
+    environment:
+      name: release  # create env 'release' with you as required reviewer
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -25,6 +60,8 @@ jobs:
 
       - name: Set up Go
         uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6

@@ -1,0 +1,9 @@
+* @TimothySpriegade
+
+# Go module files
+go.mod @TimothySpriegade
+go.sum @TimothySpriegade
+
+# CI and release config
+.github/workflows/** @TimothySpriegade
+.goreleaser.yml @TimothySpriegade

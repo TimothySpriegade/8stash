@@ -1,0 +1,40 @@
+name: go-build.yml
+on:
+  workflow_call:
+    inputs:
+      go-version-file:
+        description: Path to go version file (e.g., go.mod)
+        required: true
+        type: string
+      working-directory:
+        description: Directory to run build in
+        required: false
+        type: string
+        default: '.'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ inputs.go-version-file }}
+          cache: true
+
+      - name: Build all packages
+        working-directory: ${{ inputs.working-directory }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          go mod download
+          go build ./...
