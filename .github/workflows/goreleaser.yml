@@ -44,6 +44,7 @@ jobs:
     uses: ./.github/workflows/go-build.yml
     with:
       go-version-file: 'go.mod'
+      working-directory: 'cmd/8stash'
 
   goreleaser:
     needs: [verify, tests, build]
@@ -51,7 +52,7 @@ jobs:
     name: Release New Version
     runs-on: ubuntu-latest
     environment:
-      name: release  # create env 'release' with you as required reviewer
+      name: release
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -68,6 +69,7 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean
+          args: release --clean --config ../.goreleaser.yaml
+          workdir: ./cmd/8stash
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}

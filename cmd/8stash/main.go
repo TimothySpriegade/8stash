@@ -1,7 +1,7 @@
 package main
 
 import (
-	service "8stash/internal/service"
+	"8stash/internal/service"
 	"8stash/internal/validation"
 	"fmt"
 	"os"
