@@ -69,7 +69,7 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean --config ../.goreleaser.yaml
+          args: release --clean --config ../.goreleaser.yml
           workdir: ./cmd/8stash
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
