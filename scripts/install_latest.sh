@@ -1,4 +1,5 @@
 #!/bin/sh
+
 # --- Configuration ---
 OWNER="timothyspriegade"
 REPO="8stash"

@@ -28,8 +28,8 @@ project's goal of creating a reliable and efficient command-line tool for develo
 ### Installation and Usage
 You can install the latest release of 8Stash with:
 ```sh
-   curl -sL https://raw.githubusercontent.com/TimothySpriegade/9stash/main/scripts/install_latest.sh | bash
-   ```
+curl -sL https://raw.githubusercontent.com/TimothySpriegade/9stash/main/scripts/install_latest.sh | bash
+```
 Alternatively, build and install locally:
 
 1. **Clone the repository:**
@@ -51,11 +51,11 @@ Alternatively, build and install locally:
 
 After installation, you can use 8Stash from the command line:
 ```sh
-  8stash [command] [options]
+8stash [command] [options]
 ```
 Use the 'help' command for more detailed usage instructions.
 ```sh
-  8stash help
+8stash help
 ```
 <h1>
 </h1>
