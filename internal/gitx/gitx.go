@@ -14,6 +14,8 @@ import (
 	"github.com/go-git/go-git/v6/plumbing/transport/ssh"
 )
 
+const branchNameMustNotEmptyErrorMsg = "branch name must not be empty"
+
 func getRepoContext() (*git.Repository, *git.Worktree, string, string, error) {
 	repo, err := git.PlainOpenWithOptions(".", &git.PlainOpenOptions{DetectDotGit: true})
 	if err != nil {
@@ -42,6 +44,203 @@ func getRepoContext() (*git.Repository, *git.Worktree, string, string, error) {
 	}
 
 	return repo, wt, branch, remote, nil
+}
+
+func MergeStashIntoCurrentBranch(branchName string) error {
+	repo, wt, currentBranch, remote, err := getRepoContext()
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(branchName) == "" {
+		return fmt.Errorf(branchNameMustNotEmptyErrorMsg)
+	}
+
+	cands, err := findRemoteCandidates(repo, branchName)
+	if err != nil {
+		return err
+	}
+	if len(cands) == 0 {
+		return fmt.Errorf("no remote branch %q found", branchName)
+	}
+
+	var target *plumbing.Reference
+	prefer := plumbing.ReferenceName("refs/remotes/" + remote + "/" + strings.TrimPrefix(branchName, remote+"/"))
+	for _, r := range cands {
+		if r.Name() == prefer {
+			target = r
+			break
+		}
+	}
+	if target == nil {
+		for _, r := range cands {
+			if strings.HasSuffix(r.Name().Short(), "/HEAD") {
+				continue
+			}
+			target = r
+			break
+		}
+	}
+	if target == nil {
+		return fmt.Errorf("no suitable remote branch candidate for %q", branchName)
+	}
+
+	headRef, err := repo.Head()
+	if err != nil {
+		return fmt.Errorf("HEAD: %w", err)
+	}
+	originalHeadHash := headRef.Hash()
+
+	ok, err := isAncestor(repo, headRef.Hash(), target.Hash())
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("non fast-forward merge required: %s -> %s",
+			headRef.Name().Short(), target.Name().Short())
+	}
+
+	brName := plumbing.NewBranchReferenceName(currentBranch)
+	if err := repo.Storer.SetReference(plumbing.NewHashReference(brName, target.Hash())); err != nil {
+		return fmt.Errorf("update branch ref: %w", err)
+	}
+	if err := wt.Reset(&git.ResetOptions{
+		Mode:   git.HardReset,
+		Commit: target.Hash(),
+	}); err != nil {
+		return fmt.Errorf("reset worktree: %w", err)
+	}
+
+	if err := wt.Reset(&git.ResetOptions{
+		Mode:   git.MixedReset,
+		Commit: originalHeadHash,
+	}); err != nil {
+		return fmt.Errorf("mixed reset to original head: %w", err)
+	}
+
+	return nil
+}
+
+func isAncestor(repo *git.Repository, ancestor, descendant plumbing.Hash) (bool, error) {
+	if ancestor == descendant {
+		return true, nil
+	}
+
+	seen := make(map[plumbing.Hash]struct{})
+	queue := []plumbing.Hash{descendant}
+
+	for len(queue) > 0 {
+		h := queue[0]
+		queue = queue[1:]
+
+		if h == ancestor {
+			return true, nil
+		}
+		if _, ok := seen[h]; ok {
+			continue
+		}
+		seen[h] = struct{}{}
+
+		c, err := repo.CommitObject(h)
+		if err != nil {
+			return false, err
+		}
+		for _, ph := range c.ParentHashes {
+			if ph == ancestor {
+				return true, nil
+			}
+			if _, ok := seen[ph]; !ok {
+				queue = append(queue, ph)
+			}
+		}
+	}
+	return false, nil
+}
+
+func findRemoteCandidates(repo *git.Repository, branchName string) ([]*plumbing.Reference, error) {
+	var out []*plumbing.Reference
+
+	if strings.Contains(branchName, "/") {
+		exact := plumbing.ReferenceName("refs/remotes/" + branchName)
+		if ref, err := repo.Reference(exact, true); err == nil {
+			out = append(out, ref)
+			return out, nil
+		}
+	}
+
+	iter, err := repo.References()
+	if err != nil {
+		return nil, fmt.Errorf("list references: %w", err)
+	}
+	defer iter.Close()
+
+	wantSuffix := "/" + strings.TrimPrefix(branchName, "/")
+	err = iter.ForEach(func(ref *plumbing.Reference) error {
+		if !ref.Name().IsRemote() {
+			return nil
+		}
+		if strings.HasSuffix(ref.Name().Short(), wantSuffix) {
+			out = append(out, ref)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("iterate references: %w", err)
+	}
+	return out, nil
+}
+
+func DeleteBranch(branchName string) error {
+	repo, _, _, remoteName, err := getRepoContext() // Assumes getRepoContext exists and returns these values
+	if err != nil {
+		return err
+	}
+
+	if strings.TrimSpace(branchName) == "" {
+		return fmt.Errorf(branchNameMustNotEmptyErrorMsg)
+	}
+
+	// Delete the local branch
+	fmt.Printf("trying to delete branch %s locally\n", branchName)
+	localRefName := plumbing.NewBranchReferenceName(branchName)
+
+	headRef, err := repo.Head()
+	if err != nil {
+		return fmt.Errorf("could not read HEAD: %w", err)
+	}
+	if headRef.Name() == localRefName {
+		return fmt.Errorf("cannot delete current branch %q. Please switch to another branch first", branchName)
+	}
+
+	err = repo.Storer.RemoveReference(localRefName)
+	if err != nil && err != plumbing.ErrReferenceNotFound {
+		return fmt.Errorf("failed to delete local branch %q: %w", branchName, err)
+	}
+	if err == nil {
+		fmt.Printf("Local branch '%s' was deleted successfully.", branchName)
+	} else {
+		fmt.Printf("Local branch '%s' not found or already deleted.", branchName)
+	}
+
+	// Delete the remote branch
+	fmt.Printf("trying to delete branch %s on remote\n", branchName)
+	remoteRefSpec := config.RefSpec(":" + localRefName.String())
+
+	pushOptions := &git.PushOptions{
+		RemoteName: remoteName,
+		RefSpecs:   []config.RefSpec{remoteRefSpec},
+	}
+
+	fmt.Printf("Attempting to delete remote branch '%s' on '%s'...", branchName, remoteName)
+
+	err = repo.Push(pushOptions)
+
+	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+		return fmt.Errorf("failed to delete remote branch: %w", err)
+	}
+
+	fmt.Printf("Remote branch '%s' on '%s' deleted successfully or was not present.", branchName, remoteName)
+
+	return nil
 }
 
 func UpdateRepository() error {
@@ -84,7 +283,7 @@ func PrepareRepository() error {
 
 func validateBranch(branchName string, origBranch string, repo *git.Repository) error {
 	if branchName == "" {
-		return fmt.Errorf("branch name must not be empty")
+		return fmt.Errorf(branchNameMustNotEmptyErrorMsg)
 	}
 	if branchName == origBranch {
 		return fmt.Errorf("target branch equals current branch")

@@ -5,6 +5,7 @@ import (
 	"8stash/internal/validation"
 	"fmt"
 	"os"
+	"strconv"
 
 	flag "github.com/spf13/pflag"
 )
@@ -33,7 +34,7 @@ func Init() int {
 	case "push":
 		return push()
 	case "pop":
-		fmt.Println("8stash Pop")
+		return pop()
 	case "list":
 		return list()
 	case "drop":
@@ -65,5 +66,13 @@ func push() int {
 		return 1
 	}
 	fmt.Printf("Changes stashed to new branch: %s\n", stashName)
+	return 0
+}
+
+func pop() int {
+	if err := service.HandlePop(strconv.Itoa(stashNumber)); err != nil {
+		fmt.Fprintf(os.Stderr, "Error during pop operation: %v\n", err)
+		return 1
+	}
 	return 0
 }

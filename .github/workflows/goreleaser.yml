@@ -1,6 +1,5 @@
 name: goreleaser.yml
 on:
-  workflow_dispatch:
   push:
     tags:
       - 'v*'

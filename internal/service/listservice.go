@@ -6,13 +6,13 @@ import (
 	"sort"
 )
 
-const branchPrefix = "8stash/"
+const BranchPrefix = "8stash/"
 
 func HandleList() error {
 	if err := gitx.UpdateRepository(); err != nil {
 		return err
 	}
-	listOfStashes, err := retrieve8stashList()
+	listOfStashes, err := Retrieve8stashList()
 	if err != nil {
 		return err
 	}
@@ -20,8 +20,8 @@ func HandleList() error {
 	return nil
 }
 
-func retrieve8stashList() (map[string]string, error) {
-	mapOfListAndTime, err := gitx.GetBranchesWithStringName(branchPrefix)
+func Retrieve8stashList() (map[string]string, error) {
+	mapOfListAndTime, err := gitx.GetBranchesWithStringName(BranchPrefix)
 	if err != nil {
 		return nil, err
 	}
