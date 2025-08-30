@@ -26,7 +26,37 @@ project's goal of creating a reliable and efficient command-line tool for develo
 </h1>
 
 ### Installation and Usage
+You can install the latest release of 8Stash with:
+```sh
+   curl -sL https://raw.githubusercontent.com/TimothySpriegade/9stash/main/scripts/install_latest.sh | bash
+   ```
+Alternatively, build and install locally:
 
+1. **Clone the repository:**
+   ```sh
+   git clone git@github.com:TimothySpriegade/8stash.git
+    ```
+
+2. **Install Go dependencies:**
+   ```sh
+   go mod tidy
+   ```
+   
+2. **Use the local install script**
+    ```sh
+    cd 8stash/scripts
+    chmod +x scripts/build_install_locally.sh
+    ./scripts/build_install_locally.sh
+    ```
+
+After installation, you can use 8Stash from the command line:
+```sh
+  8stash [command] [options]
+```
+Use the 'help' command for more detailed usage instructions.
+```sh
+  8stash help
+```
 <h1>
 </h1>
 
