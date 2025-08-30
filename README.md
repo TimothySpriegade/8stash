@@ -30,8 +30,47 @@ project's goal of creating a reliable and efficient command-line tool for develo
 <h1>
 </h1>
 
-### Contribute
+### Contributing & Local Setup
 
+Contributions are welcome. 8Stash aims to be a simple and reliable CLI for sharing work in progress.
+Please open an issue to discuss larger changes, keep pull requests small and focused, add or update tests for new
+behavior, run go fmt and go test ./... before pushing, and update README.md when user facing changes are introduced.
+Check open issues and labels to find a good first task.
+
+1. **Clone the repository:**
+   ```sh
+   git clone git@github.com:TimothySpriegade/8stash.git
+    ```
+
+2. **Install Go dependencies:**
+   ```sh
+   go mod tidy
+   ```
+
+3. **Ensure that the project can be built**
+   ```sh
+    cd 8stash/cmd/8stash
+    go build
+    ```
+   or
+    ```sh
+    cd 8stash/scripts
+    chmod +x scripts/build_install_locally.sh
+    ./scripts/build_install_locally.sh
+    ```
+   This script can also be used during development to install the latest local version of 8Stash directly.
+
+- Ensure the install target (typically ~/bin or ~/.local/bin) is on your PATH:
+    ```sh
+    export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
+    ```
+
+- Make sure the tests are working locally.
+    ```sh
+    go test ./...
+    ```
+
+Thanks for contributing to 8Stash—every issue, discussion, and PR helps make it better. Happy hacking!
 <h1>
 </h1>
 
