@@ -26,10 +26,9 @@ func HandlePop(stashNumber string) error {
 	}
 
 	if len(stashes) > 1 {
-		if stashNumber == "" {
+		if stashNumber == "0" {
 			return errors.New("multiple pops found an no stash number given")
 		}
-
 		if err := popStash(stashNumber, stashes); err != nil {
 			return err
 		}
@@ -43,13 +42,13 @@ func HandlePop(stashNumber string) error {
 }
 
 func popStash(stashNumber string, stashes map[string]string) error {
-	if stashNumber == "" {
-		for stashNr, _ := range stashes {
-			var branchName = BranchPrefix + stashNr
+	if stashNumber == "0" {
+		for branchName := range stashes {
 			if err := gitx.MergeStashIntoCurrentBranch(branchName); err != nil {
 				return err
 			}
 		}
+		return nil
 	}
 
 	var branchName = BranchPrefix + stashNumber

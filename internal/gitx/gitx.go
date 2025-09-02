@@ -406,7 +406,6 @@ func GetBranchesWithStringName(prefix string) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	refs, err := repo.References()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get references: %w", err)
@@ -416,8 +415,12 @@ func GetBranchesWithStringName(prefix string) (map[string]string, error) {
 	now := time.Now()
 
 	err = refs.ForEach(func(ref *plumbing.Reference) error {
-		if ref.Name().IsBranch() {
+		if ref.Name().IsRemote() {
 			branchName := ref.Name().Short()
+
+			if strings.HasSuffix(branchName, "/HEAD") {
+				return nil
+			}
 
 			if prefix == "" || strings.HasPrefix(branchName, prefix) {
 				commit, err := repo.CommitObject(ref.Hash())
