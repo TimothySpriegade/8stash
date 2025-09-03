@@ -21,6 +21,9 @@ func HandleList() error {
 }
 
 func Retrieve8stashList() (map[string]string, error) {
+	if err := gitx.UpdateRepository(); err != nil {
+		return nil, err
+	}
 	mapOfListAndTime, err := gitx.GetBranchesWithStringName(BranchPrefix)
 	if err != nil {
 		return nil, err
