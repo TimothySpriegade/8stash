@@ -1,4 +1,4 @@
-name: go-build.yml
+name: go-build
 on:
   workflow_call:
     inputs:
