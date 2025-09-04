@@ -6,7 +6,7 @@ require github.com/spf13/pflag v1.0.10
 
 require (
 	github.com/go-git/go-git/v6 v6.0.0-20250819122726-39261590f7f3
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
