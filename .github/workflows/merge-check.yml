@@ -4,11 +4,13 @@ on:
 
 jobs:
   tests:
+    name: Run Tests
     uses: ./.github/workflows/go-tests.yml
     with:
       go-version-file: 'go.mod'
 
   build:
+    name: Build
     uses: ./.github/workflows/go-build.yml
     with:
       go-version-file: 'go.mod'
