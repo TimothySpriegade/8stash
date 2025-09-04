@@ -1,6 +1,7 @@
 package gitx
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -48,7 +49,7 @@ func setupTestRepo(t *testing.T) (string, func()) {
 	require.NoError(t, err)
 	require.NoError(t, repo.Push(&git.PushOptions{
 		RemoteName: "origin",
-		RefSpecs:   []config.RefSpec{"refs/heads/main:refs/heads/main"},
+		RefSpecs:   []config.RefSpec{config.RefSpec("refs/heads/main:refs/heads/main")},
 	}))
 
 	cleanup := func() {
@@ -115,11 +116,17 @@ func TestGetBranchesWithStringName_FilterAndFormatting(t *testing.T) {
 	wt, err := repo.Worktree()
 	require.NoError(t, err)
 
+	pushBranch := func(name string) {
+		require.NoError(t, repo.Push(&git.PushOptions{
+			RemoteName: "origin",
+			RefSpecs:   []config.RefSpec{config.RefSpec("refs/heads/" + name + ":refs/heads/" + name)},
+		}))
+	}
+
 	twoDaysAgo := time.Now().Add(-48 * time.Hour)
 	tenMinAgo := time.Now().Add(-10 * time.Minute)
 	oneMinAgo := time.Now().Add(-1 * time.Minute)
 
-	// create different branches
 	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName("8stash/xyz"),
 		Create: true,
@@ -131,11 +138,13 @@ func TestGetBranchesWithStringName_FilterAndFormatting(t *testing.T) {
 		Author: &object.Signature{Name: "T", Email: "t@example.com", When: twoDaysAgo},
 	})
 	require.NoError(t, err)
+	pushBranch("8stash/xyz")
 
 	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName("main"),
 	}))
 
+	// feature/abc
 	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName("feature/abc"),
 		Create: true,
@@ -147,6 +156,7 @@ func TestGetBranchesWithStringName_FilterAndFormatting(t *testing.T) {
 		Author: &object.Signature{Name: "T", Email: "t@example.com", When: tenMinAgo},
 	})
 	require.NoError(t, err)
+	pushBranch("feature/abc")
 
 	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName("main"),
@@ -163,10 +173,15 @@ func TestGetBranchesWithStringName_FilterAndFormatting(t *testing.T) {
 		Author: &object.Signature{Name: "T", Email: "t@example.com", When: oneMinAgo},
 	})
 	require.NoError(t, err)
+	pushBranch("bugfix/one")
 
 	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName("main"),
 	}))
+
+	if err := repo.Fetch(&git.FetchOptions{RemoteName: "origin"}); err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+		require.NoError(t, err)
+	}
 
 	// Act
 	all, err := GetBranchesWithStringName("")
@@ -175,13 +190,13 @@ func TestGetBranchesWithStringName_FilterAndFormatting(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert
-	assert.Contains(t, all, "main")                         // includes main
-	assert.Contains(t, all, "8stash/xyz")                   // includes 8stash/xyz
-	assert.Contains(t, all, "feature/abc")                  // includes feature/abc
-	assert.Contains(t, all, "bugfix/one")                   // includes bugfix/one
-	assert.NotEmpty(t, all["main"])                         // main has a formatted time string
-	assert.Len(t, only8stash, 1)                            // prefix filter selects only 8stash/*
-	assert.Equal(t, "2 days ago", only8stash["8stash/xyz"]) // time formatting for 2 days ago
+	assert.Contains(t, all, "main")
+	assert.Contains(t, all, "8stash/xyz")
+	assert.Contains(t, all, "feature/abc")
+	assert.Contains(t, all, "bugfix/one")
+	assert.NotEmpty(t, all["main"])
+	assert.Len(t, only8stash, 1)
+	assert.Equal(t, "2 days ago", only8stash["8stash/xyz"])
 }
 
 func TestGetBranchesWithStringName_NotARepo(t *testing.T) {
@@ -248,7 +263,7 @@ func TestUpdateRepository_FastForward(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NoError(t, repo2.Push(&git.PushOptions{
-		RefSpecs: []config.RefSpec{"refs/heads/main:refs/heads/main"},
+		RefSpecs: []config.RefSpec{config.RefSpec("refs/heads/main:refs/heads/main")},
 	}))
 
 	require.NoError(t, os.Chdir(localPath))
@@ -304,7 +319,7 @@ func TestUpdateRepository_NonFastForward(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NoError(t, repo2.Push(&git.PushOptions{
-		RefSpecs: []config.RefSpec{"refs/heads/main:refs/heads/main"},
+		RefSpecs: []config.RefSpec{config.RefSpec("refs/heads/main:refs/heads/main")},
 	}))
 
 	require.NoError(t, os.Chdir(localPath))
@@ -392,7 +407,7 @@ func TestPrepareRepository_PropagatesUpdateError(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NoError(t, repo2.Push(&git.PushOptions{
-		RefSpecs: []config.RefSpec{"refs/heads/main:refs/heads/main"},
+		RefSpecs: []config.RefSpec{config.RefSpec("refs/heads/main:refs/heads/main")},
 	}))
 
 	require.NoError(t, os.Chdir(localPath))
