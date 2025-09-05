@@ -419,3 +419,257 @@ func TestPrepareRepository_PropagatesUpdateError(t *testing.T) {
 	require.Error(t, err)                            // PrepareRepository fails when UpdateRepository fails
 	assert.ErrorContains(t, err, "non fast-forward") // error message indicates non fast-forward
 }
+
+func TestMergeStashIntoCurrentBranch_FastForward_AppliesWorktreeChanges(t *testing.T) {
+	// Arrange
+	localPath, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, err := git.PlainOpen(localPath)
+	require.NoError(t, err)
+	wt, err := repo.Worktree()
+	require.NoError(t, err)
+
+	// Create remote branch from main with an extra commit
+	branchName := "8stash/xyz"
+	fileName := "merge-stash.txt"
+
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(branchName),
+		Create: true,
+	}))
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, fileName), []byte("remote work"), 0o644))
+	_, err = wt.Add(fileName)
+	require.NoError(t, err)
+	_, err = wt.Commit("remote change", &git.CommitOptions{
+		Author: &object.Signature{Name: "R", Email: "r@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+	require.NoError(t, repo.Push(&git.PushOptions{
+		RefSpecs: []config.RefSpec{config.RefSpec("refs/heads/" + branchName + ":refs/heads/" + branchName)},
+	}))
+
+	// Switch back to main
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName("main"),
+	}))
+	headBefore, err := repo.Head()
+	require.NoError(t, err)
+	origHash := headBefore.Hash()
+
+	// Act
+	err = MergeStashIntoCurrentBranch(branchName)
+
+	// Assert
+	require.NoError(t, err)
+
+	headAfter, err := repo.Head()
+	require.NoError(t, err)
+	assert.Equal(t, "refs/heads/main", headAfter.Name().String())
+	// HEAD should be at the original main commit (changes applied to worktree)
+	assert.Equal(t, origHash, headAfter.Hash())
+
+	wt, err = repo.Worktree()
+	require.NoError(t, err)
+	status, err := wt.Status()
+	require.NoError(t, err)
+	assert.False(t, status.IsClean())
+	b, err := os.ReadFile(filepath.Join(localPath, fileName))
+	require.NoError(t, err)
+	assert.Equal(t, "remote work", string(b))
+}
+
+func TestMergeStashIntoCurrentBranch_NonFastForward_Error(t *testing.T) {
+	// Arrange
+	localPath, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, err := git.PlainOpen(localPath)
+	require.NoError(t, err)
+	wt, err := repo.Worktree()
+	require.NoError(t, err)
+
+	branchName := "8stash/xyz"
+
+	// Create and push the remote branch off main
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(branchName),
+		Create: true,
+	}))
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, "remote.txt"), []byte("remote"), 0o644))
+	_, err = wt.Add("remote.txt")
+	require.NoError(t, err)
+	_, err = wt.Commit("remote change", &git.CommitOptions{
+		Author: &object.Signature{Name: "R", Email: "r@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+	require.NoError(t, repo.Push(&git.PushOptions{
+		RefSpecs: []config.RefSpec{config.RefSpec("refs/heads/" + branchName + ":refs/heads/" + branchName)},
+	}))
+
+	// Diverge local main with a new local commit
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName("main"),
+	}))
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, "local.txt"), []byte("local"), 0o644))
+	_, err = wt.Add("local.txt")
+	require.NoError(t, err)
+	_, err = wt.Commit("local change", &git.CommitOptions{
+		Author: &object.Signature{Name: "L", Email: "l@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+
+	// Act
+	err = MergeStashIntoCurrentBranch(branchName)
+
+	// Assert
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "non fast-forward")
+}
+
+func TestDeleteBranch_Succeeds_LocalAndRemote(t *testing.T) {
+	// Arrange
+	localPath, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, err := git.PlainOpen(localPath)
+	require.NoError(t, err)
+	wt, err := repo.Worktree()
+	require.NoError(t, err)
+
+	branch := "feature/temp"
+
+	// Create branch with a commit and push it
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(branch),
+		Create: true,
+	}))
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, "temp.txt"), []byte("x"), 0o644))
+	_, err = wt.Add("temp.txt")
+	require.NoError(t, err)
+	_, err = wt.Commit("temp", &git.CommitOptions{
+		Author: &object.Signature{Name: "X", Email: "x@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+	require.NoError(t, repo.Push(&git.PushOptions{
+		RefSpecs: []config.RefSpec{config.RefSpec("refs/heads/" + branch + ":refs/heads/" + branch)},
+	}))
+
+	// Switch back to main
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName("main"),
+	}))
+
+	// Act
+	err = DeleteBranch(branch)
+
+	// Assert
+	require.NoError(t, err)
+
+	// Local ref removed
+	_, err = repo.Reference(plumbing.NewBranchReferenceName(branch), true)
+	assert.Error(t, err)
+
+	// Remote ref removed
+	remote, err := repo.Remote("origin")
+	require.NoError(t, err)
+	refs, err := remote.List(&git.ListOptions{})
+	require.NoError(t, err)
+	for _, r := range refs {
+		assert.NotEqual(t, fmt.Sprintf("refs/heads/%s", branch), r.Name().String())
+	}
+}
+
+func TestDeleteBranch_CurrentBranch_Error(t *testing.T) {
+	// Arrange
+	_, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	// Act
+	err := DeleteBranch("main")
+
+	// Assert
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "cannot delete current branch")
+}
+
+func TestDeleteBranch_EmptyName_Error(t *testing.T) {
+	// Arrange
+	_, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	// Act
+	err := DeleteBranch("")
+
+	// Assert
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "branch name must not be empty")
+}
+
+func TestStashChangesToNewBranch_EmptyName_Error(t *testing.T) {
+	// Arrange
+	_, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	// Act
+	err := StashChangesToNewBranch("")
+
+	// Assert
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "branch name must not be empty")
+}
+
+func TestStashChangesToNewBranch_TargetEqualsCurrent_Error(t *testing.T) {
+	// Arrange
+	_, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	// Act
+	err := StashChangesToNewBranch("main")
+
+	// Assert
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "target branch equals current branch")
+}
+
+func TestStashChangesToNewBranch_TargetAlreadyExists_Error(t *testing.T) {
+	// Arrange
+	localPath, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, err := git.PlainOpen(localPath)
+	require.NoError(t, err)
+	wt, err := repo.Worktree()
+	require.NoError(t, err)
+
+	exists := "feature/exist"
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(exists),
+		Create: true,
+		Keep:   true,
+	}))
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName("main"),
+	}))
+
+	// Act
+	err = StashChangesToNewBranch(exists)
+
+	// Assert
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "already exists")
+}
+
+func TestPrepareRepository_WithChanges_Succeeds(t *testing.T) {
+	// Arrange
+	localPath, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, "dirty.txt"), []byte("x"), 0o644))
+
+	// Act
+	err := PrepareRepository()
+
+	// Assert
+	require.NoError(t, err)
+}
