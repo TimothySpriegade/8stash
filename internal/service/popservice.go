@@ -32,6 +32,7 @@ func HandlePop(stashNumber string) error {
 		if err := popStash(stashNumber, stashes); err != nil {
 			return err
 		}
+		return nil
 	}
 
 	if err := popStash(stashNumber, stashes); err != nil {
