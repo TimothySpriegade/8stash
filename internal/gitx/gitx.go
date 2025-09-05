@@ -190,7 +190,7 @@ func findRemoteCandidates(repo *git.Repository, branchName string) ([]*plumbing.
 }
 
 func DeleteBranch(branchName string) error {
-	repo, _, _, remoteName, err := getRepoContext() // Assumes getRepoContext exists and returns these values
+	repo, _, _, remoteName, err := getRepoContext()
 	if err != nil {
 		return err
 	}

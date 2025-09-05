@@ -50,8 +50,8 @@ func popStash(stashNumber string, stashes map[string]string) error {
 				return err
 			}
 			fmt.Println("popped stash: " + branchName)
-			if err := gitx.DeleteBranch(BranchPrefix + stashNumber); err != nil {
-				fmt.Println("failed to delete branch: " + BranchPrefix + stashNumber)
+			if err := gitx.DeleteBranch(branchName); err != nil {
+				fmt.Println("failed to delete branch: " + branchName)
 				return err
 			}
 			return nil
@@ -66,6 +66,7 @@ func popStash(stashNumber string, stashes map[string]string) error {
 
 	fmt.Println("trying to delete branch: " + branchName)
 	if err := gitx.DeleteBranch(branchName); err != nil {
+		fmt.Println("failed to delete branch: " + branchName)
 		return err
 	}
 

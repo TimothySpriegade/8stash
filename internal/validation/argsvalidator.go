@@ -30,8 +30,8 @@ func ArgValidation(args []string) (string, int, error) {
 	var stashNumber int
 
 	if len(args) < 1 {
-		fmt.Println("No operation provided")
-		return "", 0, errors.New("no operation provided")
+		fmt.Println("No operation provided attempting push")
+		return "push", 0, nil
 	}
 	operation = args[0]
 	if !isValidOperation(operation) {
