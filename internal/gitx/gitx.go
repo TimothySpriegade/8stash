@@ -230,15 +230,15 @@ func DeleteBranch(branchName string) error {
 		RefSpecs:   []config.RefSpec{remoteRefSpec},
 	}
 
-	fmt.Printf("Attempting to delete remote branch '%s' on '%s'...", branchName, remoteName)
+	fmt.Printf("Attempting to delete remote branch '%s' on '%s'...\n", branchName, remoteName)
 
 	err = repo.Push(pushOptions)
 
 	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
-		return fmt.Errorf("failed to delete remote branch: %w", err)
+		return fmt.Errorf("failed to delete remote branch: %w\n", err)
 	}
 
-	fmt.Printf("Remote branch '%s' on '%s' deleted successfully or was not present.", branchName, remoteName)
+	fmt.Printf("Remote branch '%s' on '%s' deleted successfully or was not present.\n", branchName, remoteName)
 
 	return nil
 }
