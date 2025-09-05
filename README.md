@@ -25,7 +25,7 @@ project's goal of creating a reliable and efficient command-line tool for develo
 <h1>
 </h1>
 
-### Installation and Usage
+### Installation
 You can install the latest release of 8Stash with:
 ```sh
 curl -sL https://raw.githubusercontent.com/TimothySpriegade/8stash/main/scripts/install_latest.sh | bash
@@ -53,7 +53,44 @@ After installation, you can use 8Stash from the command line:
 ```sh
 8stash [command] [options]
 ```
-Use the 'help' command for more detailed usage instructions.
+
+<h1>
+</h1>
+
+### Usage
+8Stash lets you quickly park your uncommitted work into a temporary remote branch, pick it up on another machine, and re‑apply it as local unstaged changes without polluting your main branch history.
+
+Prerequisites:
+1. You are inside a Git repository with a clean syncable base (no unpushed divergent commits)
+2. You have uncommitted changes you want to share or move
+3. origin remote is available (SSH or HTTPS, preferably SSH)
+
+Typical workflow:
+1. Save (push): Create a temporary branch from the current HEAD that contains exactly your current uncommitted changes; they are committed on that new branch, the branch is pushed to origin, and your original branch is restored to a clean state locally.
+2. Share: Communicate the temporary branch number (e.g. 8stash/8374) to a teammate or switch machines and pull/fetch on the other clone.
+3. List (list): View available stash branches filtered by a naming convention (e.g. all starting with 8stash/) with human‑readable ages to choose the right one.
+4. Apply (pop): Re‑apply a chosen stash branch onto your current branch so that its changes appear as unstaged modifications in your working directory; no merge commit and no history rewrite occur.
+5. Clean up: Applied stashes are removed localy and on remote to avoid messy repositories.
+6. Work: Inspect, edit further, stage, and create proper commits as desired.
+7. Repeat as needed for new slices of in‑progress work.
+
+Behavior characteristics:
+- Only fast‑forward friendly states are accepted; divergent histories are rejected to avoid accidental overwrites.
+- Applying a stash does not advance or modify your current branch’s commit history; it only repopulates the working tree.
+- Relative age displays (e.g. minutes/hours/days ago) are based on the current system clock.
+
+Ideal use cases:
+- Pair programming driver handoff.
+- Moving unfinished edits between desktop and laptop.
+- Quick review handover without committing partial or experimental changes.
+- Temporary parking of exploratory work prior to reshaping into clean commits.
+
+Limitations to keep in mind:
+- Not a replacement for long‑lived feature branches.
+- Does not resolve underlying repository divergence; you must reconcile first.
+- Large binary or generated assets will still be committed onto the temporary branch (consider .gitignore hygiene).
+
+Use the 'help' command for further detailed usage instructions.
 ```sh
 8stash help
 ```
