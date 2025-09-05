@@ -1,6 +1,7 @@
 package gitx
 
 import (
+	"8stash/internal/test"
 	"errors"
 	"fmt"
 	"os"
@@ -16,56 +17,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupTestRepo(t *testing.T) (string, func()) {
-	remotePath, err := os.MkdirTemp("", "remote")
-	require.NoError(t, err)
-	_, err = git.PlainInit(remotePath, true)
-	require.NoError(t, err)
-
-	localPath, err := os.MkdirTemp("", "local")
-	require.NoError(t, err)
-	repo, err := git.PlainInit(localPath, false)
-	require.NoError(t, err)
-
-	originalWD, err := os.Getwd()
-	require.NoError(t, err)
-	require.NoError(t, os.Chdir(localPath))
-
-	require.NoError(t, repo.Storer.SetReference(
-		plumbing.NewSymbolicReference(plumbing.HEAD, plumbing.NewBranchReferenceName("main")),
-	))
-
-	wt, err := repo.Worktree()
-	require.NoError(t, err)
-	require.NoError(t, os.WriteFile("initial.txt", []byte("initial content"), 0o644))
-	_, err = wt.Add("initial.txt")
-	require.NoError(t, err)
-	_, err = wt.Commit("initial commit", &git.CommitOptions{
-		Author: &object.Signature{Name: "Test", Email: "test@example.com", When: time.Now()},
-	})
-	require.NoError(t, err)
-
-	_, err = repo.CreateRemote(&config.RemoteConfig{Name: "origin", URLs: []string{remotePath}})
-	require.NoError(t, err)
-	require.NoError(t, repo.Push(&git.PushOptions{
-		RemoteName: "origin",
-		RefSpecs:   []config.RefSpec{config.RefSpec("refs/heads/main:refs/heads/main")},
-	}))
-
-	cleanup := func() {
-		if err := os.Chdir(originalWD); err != nil {
-			t.Logf("failed to change back to original directory: %v", err)
-		}
-		_ = os.RemoveAll(remotePath)
-		_ = os.RemoveAll(localPath)
-	}
-
-	return localPath, cleanup
-}
-
 func TestStashChangesToNewBranch(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 	newFilePath := filepath.Join(localPath, "new-feature.txt")
 	require.NoError(t, os.WriteFile(newFilePath, []byte("work in progress"), 0o644))
@@ -108,7 +62,7 @@ func TestStashChangesToNewBranch(t *testing.T) {
 
 func TestGetBranchesWithStringName_FilterAndFormatting(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	repo, err := git.PlainOpen(localPath)
@@ -220,7 +174,7 @@ func TestGetBranchesWithStringName_NotARepo(t *testing.T) {
 
 func TestUpdateRepository_UpToDate(t *testing.T) {
 	// Arrange
-	_, cleanup := setupTestRepo(t)
+	_, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	// Act
@@ -232,7 +186,7 @@ func TestUpdateRepository_UpToDate(t *testing.T) {
 
 func TestUpdateRepository_FastForward(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	// Second clone on main that pushes a new commit to origin.
@@ -277,7 +231,7 @@ func TestUpdateRepository_FastForward(t *testing.T) {
 
 func TestUpdateRepository_NonFastForward(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	// Local commit (not pushed) to create divergence.
@@ -353,7 +307,7 @@ func TestPrepareRepository_NotARepo(t *testing.T) {
 
 func TestPrepareRepository_CleanRepo_NoChanges(t *testing.T) {
 	// Arrange
-	_, cleanup := setupTestRepo(t)
+	_, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	// Act
@@ -365,7 +319,7 @@ func TestPrepareRepository_CleanRepo_NoChanges(t *testing.T) {
 
 func TestPrepareRepository_PropagatesUpdateError(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	// Local commit (not pushed) to diverge.
@@ -422,7 +376,7 @@ func TestPrepareRepository_PropagatesUpdateError(t *testing.T) {
 
 func TestMergeStashIntoCurrentBranch_FastForward_AppliesWorktreeChanges(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	repo, err := git.PlainOpen(localPath)
@@ -481,7 +435,7 @@ func TestMergeStashIntoCurrentBranch_FastForward_AppliesWorktreeChanges(t *testi
 
 func TestMergeStashIntoCurrentBranch_NonFastForward_Error(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	repo, err := git.PlainOpen(localPath)
@@ -529,7 +483,7 @@ func TestMergeStashIntoCurrentBranch_NonFastForward_Error(t *testing.T) {
 
 func TestDeleteBranch_Succeeds_LocalAndRemote(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	repo, err := git.PlainOpen(localPath)
@@ -582,7 +536,7 @@ func TestDeleteBranch_Succeeds_LocalAndRemote(t *testing.T) {
 
 func TestDeleteBranch_CurrentBranch_Error(t *testing.T) {
 	// Arrange
-	_, cleanup := setupTestRepo(t)
+	_, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	// Act
@@ -595,7 +549,7 @@ func TestDeleteBranch_CurrentBranch_Error(t *testing.T) {
 
 func TestDeleteBranch_EmptyName_Error(t *testing.T) {
 	// Arrange
-	_, cleanup := setupTestRepo(t)
+	_, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	// Act
@@ -608,7 +562,7 @@ func TestDeleteBranch_EmptyName_Error(t *testing.T) {
 
 func TestStashChangesToNewBranch_EmptyName_Error(t *testing.T) {
 	// Arrange
-	_, cleanup := setupTestRepo(t)
+	_, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	// Act
@@ -621,7 +575,7 @@ func TestStashChangesToNewBranch_EmptyName_Error(t *testing.T) {
 
 func TestStashChangesToNewBranch_TargetEqualsCurrent_Error(t *testing.T) {
 	// Arrange
-	_, cleanup := setupTestRepo(t)
+	_, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	// Act
@@ -634,7 +588,7 @@ func TestStashChangesToNewBranch_TargetEqualsCurrent_Error(t *testing.T) {
 
 func TestStashChangesToNewBranch_TargetAlreadyExists_Error(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	repo, err := git.PlainOpen(localPath)
@@ -662,7 +616,7 @@ func TestStashChangesToNewBranch_TargetAlreadyExists_Error(t *testing.T) {
 
 func TestPrepareRepository_WithChanges_Succeeds(t *testing.T) {
 	// Arrange
-	localPath, cleanup := setupTestRepo(t)
+	localPath, cleanup := test.SetupTestRepo(t)
 	defer cleanup()
 
 	require.NoError(t, os.WriteFile(filepath.Join(localPath, "dirty.txt"), []byte("x"), 0o644))
