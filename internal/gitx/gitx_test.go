@@ -627,3 +627,133 @@ func TestPrepareRepository_WithChanges_Succeeds(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 }
+
+func TestApplyDivergedMerge_Succeeds_NoConflicts(t *testing.T) {
+	// Arrange
+	localPath, cleanup := test.SetupTestRepo(t)
+	defer cleanup()
+
+	repo, err := git.PlainOpen(localPath)
+	require.NoError(t, err)
+	wt, err := repo.Worktree()
+	require.NoError(t, err)
+
+	branchName := "feature/merge-ok"
+	fileName := "remote_ok.txt"
+
+	// Create and push remote branch from main with a non-conflicting change
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(branchName),
+		Create: true,
+	}))
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, fileName), []byte("remote content"), 0o644))
+	_, err = wt.Add(fileName)
+	require.NoError(t, err)
+	_, err = wt.Commit("remote non-conflicting change", &git.CommitOptions{
+		Author: &object.Signature{Name: "R", Email: "r@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+	require.NoError(t, repo.Push(&git.PushOptions{
+		RefSpecs: []config.RefSpec{config.RefSpec("refs/heads/" + branchName + ":refs/heads/" + branchName)},
+	}))
+
+	// Switch back to main and ensure we have the remote-tracking ref locally
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName("main"),
+	}))
+	if err := repo.Fetch(&git.FetchOptions{RemoteName: "origin"}); err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+		require.NoError(t, err)
+	}
+
+	headBefore, err := repo.Head()
+	require.NoError(t, err)
+	origHash := headBefore.Hash()
+
+	// Act
+	err = ApplyDivergedMerge(branchName)
+
+	// Assert
+	require.NoError(t, err)
+
+	headAfter, err := repo.Head()
+	require.NoError(t, err)
+	assert.Equal(t, "refs/heads/main", headAfter.Name().String())
+	assert.Equal(t, origHash, headAfter.Hash())
+
+	wt, err = repo.Worktree()
+	require.NoError(t, err)
+	status, err := wt.Status()
+	require.NoError(t, err)
+	assert.False(t, status.IsClean())
+
+	b, err := os.ReadFile(filepath.Join(localPath, fileName))
+	require.NoError(t, err)
+	assert.Equal(t, "remote content", string(b))
+}
+
+func TestApplyDivergedMerge_WithConflicts_ReturnsError(t *testing.T) {
+	// Arrange
+	localPath, cleanup := test.SetupTestRepo(t)
+	defer cleanup()
+
+	repo, err := git.PlainOpen(localPath)
+	require.NoError(t, err)
+	wt, err := repo.Worktree()
+	require.NoError(t, err)
+
+	branchName := "feature/conflict"
+	fileName := "same.txt"
+
+	// Create and push remote branch with a change
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(branchName),
+		Create: true,
+	}))
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, fileName), []byte("remote change\n"), 0o644))
+	_, err = wt.Add(fileName)
+	require.NoError(t, err)
+	_, err = wt.Commit("remote conflicting change", &git.CommitOptions{
+		Author: &object.Signature{Name: "R", Email: "r@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+	require.NoError(t, repo.Push(&git.PushOptions{
+		RefSpecs: []config.RefSpec{config.RefSpec("refs/heads/" + branchName + ":refs/heads/" + branchName)},
+	}))
+
+	// Switch back to main and create a conflicting local change
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName("main"),
+	}))
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, fileName), []byte("local change\n"), 0o644))
+	_, err = wt.Add(fileName)
+	require.NoError(t, err)
+	_, err = wt.Commit("local conflicting change", &git.CommitOptions{
+		Author: &object.Signature{Name: "L", Email: "l@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+
+	// Ensure remote-tracking ref exists locally
+	if err := repo.Fetch(&git.FetchOptions{RemoteName: "origin"}); err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+		require.NoError(t, err)
+	}
+
+	// Act
+	err = ApplyDivergedMerge(branchName)
+
+	// Assert
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "automatic merge failed")
+}
+
+func TestApplyDivergedMerge_NoRemoteCandidate_Error(t *testing.T) {
+	// Arrange
+	_, cleanup := test.SetupTestRepo(t)
+	defer cleanup()
+
+	// Act
+	err := ApplyDivergedMerge("does/not/exist")
+
+	// Assert
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "no suitable remote branch candidate")
+}
