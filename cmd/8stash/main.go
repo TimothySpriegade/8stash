@@ -38,7 +38,7 @@ func Init() int {
 	case "list":
 		return list()
 	case "drop":
-		fmt.Println("8stash Delete")
+		return drop()
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown operation: %v\n", operation)
 		os.Exit(1)
@@ -72,6 +72,13 @@ func push() int {
 func pop() int {
 	if err := service.HandlePop(strconv.Itoa(stashNumber)); err != nil {
 		fmt.Fprintf(os.Stderr, "Error during pop operation: %v\n", err)
+		return 1
+	}
+	return 0
+}
+
+func drop() int {
+	if err := service.HandleDrop(strconv.Itoa(stashNumber)); err != nil {
 		return 1
 	}
 	return 0
