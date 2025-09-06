@@ -149,6 +149,8 @@ Check open issues and labels to find a good first task.
 </a>
 
 Thanks for contributing to 8Stash—every issue, discussion, and PR helps make it better. Happy hacking!
+<h1>
+</h1>
 
 ### Disclaimer
 This project is my first experience with Go, so the code quality and structure may not be optimal. I am continuously learning and improving, and any feedback, suggestions, or contributions are always welcome and appreciated!
