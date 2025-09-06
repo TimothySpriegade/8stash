@@ -75,7 +75,7 @@ Typical workflow:
 7. Repeat as needed for new slices of in‑progress work.
 
 Behavior characteristics:
-- Only fast‑forward friendly states are accepted; divergent histories are rejected to avoid accidental overwrites.
+- Divergent histories are now supported: you can apply stashes even if your current branch has diverged from the stash base. The tool will attempt to merge changes, and you may need to resolve conflicts manually.
 - Applying a stash does not advance or modify your current branch’s commit history; it only repopulates the working tree.
 - Relative age displays (e.g. minutes/hours/days ago) are based on the current system clock.
 

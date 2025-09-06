@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestIsvalidOperation(t *testing.T) {
+func TestIsValidOperation(t *testing.T) {
 	validOps := []string{"push", "pop", "list", "drop", "help"}
 	invalidOps := []string{"commit", "merge", "rebase", "status", "checkout", "invalidOp", ""}
 
