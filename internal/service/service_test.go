@@ -263,3 +263,80 @@ func TestHandlePop_SelectByNumber_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "X", string(b))
 }
+
+func TestHandlePop_DivergedBranches_TriggersMerge(t *testing.T) {
+	// Arrange
+	localPath, cleanup := test.SetupTestRepo(t)
+	defer cleanup()
+
+	repo, err := git.PlainOpen(localPath)
+	require.NoError(t, err)
+	wt, err := repo.Worktree()
+	require.NoError(t, err)
+
+	// Create and push a stash branch with one file
+	stashBranch := BranchPrefix + "diverge"
+	stashFile := "stash.txt"
+	stashContent := "stash content"
+	createAndPushStashBranch(t, repo, wt, localPath, stashBranch, stashFile, stashContent, time.Now())
+
+	// Simulate divergence: create a DIFFERENT file on main (no conflict)
+	mainFile := "main.txt"
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, mainFile), []byte("main content"), 0o644))
+	_, err = wt.Add(mainFile)
+	require.NoError(t, err)
+	_, err = wt.Commit("main diverged", &git.CommitOptions{
+		Author: &object.Signature{Name: "M", Email: "m@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+
+	fetchAll(t, repo)
+
+	// Act
+	err = HandlePop("diverge")
+
+	// Assert - should succeed with no error
+	require.NoError(t, err)
+
+	// Both files should exist after successful merge
+	stashBytes, err := os.ReadFile(filepath.Join(localPath, stashFile))
+	require.NoError(t, err)
+	assert.Equal(t, stashContent, string(stashBytes))
+
+	mainBytes, err := os.ReadFile(filepath.Join(localPath, mainFile))
+	require.NoError(t, err)
+	assert.Equal(t, "main content", string(mainBytes))
+}
+
+func TestHandlePop_DivergedBranches_MergeConflict(t *testing.T) {
+	// Arrange
+	localPath, cleanup := test.SetupTestRepo(t)
+	defer cleanup()
+
+	repo, err := git.PlainOpen(localPath)
+	require.NoError(t, err)
+	wt, err := repo.Worktree()
+	require.NoError(t, err)
+
+	stashBranch := BranchPrefix + "conflict"
+	fileName := "conflict.txt"
+	createAndPushStashBranch(t, repo, wt, localPath, stashBranch, fileName, "stash change", time.Now())
+
+	// Simulate divergence: conflicting change on main
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, fileName), []byte("main change"), 0o644))
+	_, err = wt.Add(fileName)
+	require.NoError(t, err)
+	_, err = wt.Commit("main diverged", &git.CommitOptions{
+		Author: &object.Signature{Name: "M", Email: "m@example.com", When: time.Now()},
+	})
+	require.NoError(t, err)
+
+	fetchAll(t, repo)
+
+	// Act
+	err = HandlePop("conflict")
+
+	// Assert
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "CONFLICT")
+}

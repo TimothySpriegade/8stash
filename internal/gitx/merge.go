@@ -28,20 +28,20 @@ func findBestRemoteCandidate(candidates []*plumbing.Reference, remote, branchNam
 }
 
 func MergeStashIntoCurrentBranch(branchName string) error {
-	repo, wt, currentBranch, _, err := getRepoContext() // Assuming you have this helper
+	repo, wt, currentBranch, _, err := getRepoContext()
 	if err != nil {
 		return err
 	}
 
-	candidates, _ := findRemoteCandidates(repo, branchName)             // Assuming helper
-	target := findBestRemoteCandidate(candidates, "origin", branchName) // Assuming helper
+	candidates, _ := findRemoteCandidates(repo, branchName)
+	target := findBestRemoteCandidate(candidates, "origin", branchName)
 
 	headRef, err := repo.Head()
 	if err != nil {
 		return fmt.Errorf("HEAD: %w", err)
 	}
 
-	ok, err := isAncestor(repo, headRef.Hash(), target.Hash()) // Assuming you have isAncestor
+	ok, err := isAncestor(repo, headRef.Hash(), target.Hash())
 	if err != nil {
 		return err
 	}
@@ -59,6 +59,8 @@ func MergeStashIntoCurrentBranch(branchName string) error {
 	return wt.Reset(&git.ResetOptions{Mode: git.MixedReset, Commit: headRef.Hash()})
 }
 
+// ApplyDivergedMerge: I haven't found a way to do that with Go Git, so I used exec. Maybe you should look into Git Go again.
+// Maybe try looking into Git Go again.
 func ApplyDivergedMerge(branchName string) error {
 	repo, _, _, remote, err := getRepoContext()
 	if err != nil {
