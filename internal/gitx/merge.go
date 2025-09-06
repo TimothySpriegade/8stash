@@ -8,6 +8,21 @@ import (
 	"github.com/go-git/go-git/v6/plumbing"
 )
 
+func findBestRemoteCandidate(candidates []*plumbing.Reference, remote, branchName string) *plumbing.Reference {
+	var fallback *plumbing.Reference
+	prefer := plumbing.ReferenceName("refs/remotes/" + remote + "/" + strings.TrimPrefix(branchName, remote+"/"))
+
+	for _, r := range candidates {
+		if r.Name() == prefer {
+			return r
+		}
+		if fallback == nil && !strings.HasSuffix(r.Name().Short(), "/HEAD") {
+			fallback = r
+		}
+	}
+	return fallback
+}
+
 func MergeStashIntoCurrentBranch(branchName string) error {
 	repo, wt, currentBranch, remote, err := getRepoContext()
 	if err != nil {
@@ -17,31 +32,15 @@ func MergeStashIntoCurrentBranch(branchName string) error {
 		return fmt.Errorf(branchNameMustNotEmptyErrorMsg)
 	}
 
-	cands, err := findRemoteCandidates(repo, branchName)
+	candidates, err := findRemoteCandidates(repo, branchName)
 	if err != nil {
 		return err
 	}
-	if len(cands) == 0 {
+	if len(candidates) == 0 {
 		return fmt.Errorf("no remote branch %q found", branchName)
 	}
 
-	var target *plumbing.Reference
-	prefer := plumbing.ReferenceName("refs/remotes/" + remote + "/" + strings.TrimPrefix(branchName, remote+"/"))
-	for _, r := range cands {
-		if r.Name() == prefer {
-			target = r
-			break
-		}
-	}
-	if target == nil {
-		for _, r := range cands {
-			if strings.HasSuffix(r.Name().Short(), "/HEAD") {
-				continue
-			}
-			target = r
-			break
-		}
-	}
+	target := findBestRemoteCandidate(candidates, remote, branchName)
 	if target == nil {
 		return fmt.Errorf("no suitable remote branch candidate for %q", branchName)
 	}
@@ -65,20 +64,27 @@ func MergeStashIntoCurrentBranch(branchName string) error {
 	if err := repo.Storer.SetReference(plumbing.NewHashReference(brName, target.Hash())); err != nil {
 		return fmt.Errorf("update branch ref: %w", err)
 	}
-	if err := wt.Reset(&git.ResetOptions{
-		Mode:   git.HardReset,
-		Commit: target.Hash(),
-	}); err != nil {
+	if err := wt.Reset(&git.ResetOptions{Mode: git.HardReset, Commit: target.Hash()}); err != nil {
 		return fmt.Errorf("reset worktree: %w", err)
 	}
-
-	if err := wt.Reset(&git.ResetOptions{
-		Mode:   git.MixedReset,
-		Commit: originalHeadHash,
-	}); err != nil {
+	if err := wt.Reset(&git.ResetOptions{Mode: git.MixedReset, Commit: originalHeadHash}); err != nil {
 		return fmt.Errorf("mixed reset to original head: %w", err)
 	}
 
+	return nil
+}
+
+func processCommitNode(repo *git.Repository, hash plumbing.Hash, queue *[]plumbing.Hash, seen map[plumbing.Hash]struct{}) error {
+	commit, err := repo.CommitObject(hash)
+	if err != nil {
+		return err
+	}
+
+	for _, parentHash := range commit.ParentHashes {
+		if _, ok := seen[parentHash]; !ok {
+			*queue = append(*queue, parentHash)
+		}
+	}
 	return nil
 }
 
@@ -86,33 +92,20 @@ func isAncestor(repo *git.Repository, ancestor, descendant plumbing.Hash) (bool,
 	if ancestor == descendant {
 		return true, nil
 	}
-
 	seen := make(map[plumbing.Hash]struct{})
 	queue := []plumbing.Hash{descendant}
-
 	for len(queue) > 0 {
-		h := queue[0]
+		currentHash := queue[0]
 		queue = queue[1:]
-
-		if h == ancestor {
+		if currentHash == ancestor {
 			return true, nil
 		}
-		if _, ok := seen[h]; ok {
+		if _, ok := seen[currentHash]; ok {
 			continue
 		}
-		seen[h] = struct{}{}
-
-		c, err := repo.CommitObject(h)
-		if err != nil {
+		seen[currentHash] = struct{}{}
+		if err := processCommitNode(repo, currentHash, &queue, seen); err != nil {
 			return false, err
-		}
-		for _, ph := range c.ParentHashes {
-			if ph == ancestor {
-				return true, nil
-			}
-			if _, ok := seen[ph]; !ok {
-				queue = append(queue, ph)
-			}
 		}
 	}
 	return false, nil
