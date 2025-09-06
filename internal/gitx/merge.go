@@ -1,12 +1,16 @@
 package gitx
 
 import (
+	"errors"
 	"fmt"
+	"os/exec"
 	"strings"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 )
+
+var ErrNonFastForward = errors.New("non fast-forward merge required")
 
 func findBestRemoteCandidate(candidates []*plumbing.Reference, remote, branchName string) *plumbing.Reference {
 	var fallback *plumbing.Reference
@@ -24,40 +28,25 @@ func findBestRemoteCandidate(candidates []*plumbing.Reference, remote, branchNam
 }
 
 func MergeStashIntoCurrentBranch(branchName string) error {
-	repo, wt, currentBranch, remote, err := getRepoContext()
+	repo, wt, currentBranch, _, err := getRepoContext() // Assuming you have this helper
 	if err != nil {
 		return err
 	}
-	if strings.TrimSpace(branchName) == "" {
-		return fmt.Errorf(branchNameMustNotEmptyErrorMsg)
-	}
 
-	candidates, err := findRemoteCandidates(repo, branchName)
-	if err != nil {
-		return err
-	}
-	if len(candidates) == 0 {
-		return fmt.Errorf("no remote branch %q found", branchName)
-	}
-
-	target := findBestRemoteCandidate(candidates, remote, branchName)
-	if target == nil {
-		return fmt.Errorf("no suitable remote branch candidate for %q", branchName)
-	}
+	candidates, _ := findRemoteCandidates(repo, branchName)             // Assuming helper
+	target := findBestRemoteCandidate(candidates, "origin", branchName) // Assuming helper
 
 	headRef, err := repo.Head()
 	if err != nil {
 		return fmt.Errorf("HEAD: %w", err)
 	}
-	originalHeadHash := headRef.Hash()
 
-	ok, err := isAncestor(repo, headRef.Hash(), target.Hash())
+	ok, err := isAncestor(repo, headRef.Hash(), target.Hash()) // Assuming you have isAncestor
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("non fast-forward merge required: %s -> %s",
-			headRef.Name().Short(), target.Name().Short())
+		return ErrNonFastForward
 	}
 
 	brName := plumbing.NewBranchReferenceName(currentBranch)
@@ -67,8 +56,34 @@ func MergeStashIntoCurrentBranch(branchName string) error {
 	if err := wt.Reset(&git.ResetOptions{Mode: git.HardReset, Commit: target.Hash()}); err != nil {
 		return fmt.Errorf("reset worktree: %w", err)
 	}
-	if err := wt.Reset(&git.ResetOptions{Mode: git.MixedReset, Commit: originalHeadHash}); err != nil {
-		return fmt.Errorf("mixed reset to original head: %w", err)
+	return wt.Reset(&git.ResetOptions{Mode: git.MixedReset, Commit: headRef.Hash()})
+}
+
+func ApplyDivergedMerge(branchName string) error {
+	repo, _, _, remote, err := getRepoContext()
+	if err != nil {
+		return err
+	}
+
+	candidates, err := findRemoteCandidates(repo, branchName)
+	if err != nil {
+		return err
+	}
+	targetRef := findBestRemoteCandidate(candidates, remote, branchName)
+	if targetRef == nil {
+		return fmt.Errorf("no suitable remote branch candidate for %q", branchName)
+	}
+
+	fullBranchName := targetRef.Name().Short()
+
+	fmt.Printf("Attempting merge with: git merge --no-commit --no-ff %s", fullBranchName)
+
+	cmd := exec.Command("git", "merge", "--no-commit", "--no-ff", fullBranchName)
+
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return fmt.Errorf("automatic merge failed; fix conflicts and then commit the result:%s", string(output))
 	}
 
 	return nil
