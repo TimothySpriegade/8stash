@@ -31,6 +31,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Set up test git config
+        run: |
+          git config --global user.email "test@example.com"
+          git config --global user.name "Test User"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
