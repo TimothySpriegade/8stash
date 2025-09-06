@@ -1,3 +1,7 @@
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+![GitHub Release](https://img.shields.io/github/v/release/timothyspriegade/8stash)
+![GitHub repo size](https://img.shields.io/github/repo-size/timothyspriegade/8stash)
+
 <div align="center">
     <h1>
         <img src=".github/readme/8Stash Banner.png" alt="8Stash Banner">
@@ -136,13 +140,19 @@ Check open issues and labels to find a good first task.
     ```sh
     go test ./...
     ```
-
 <h1>
 </h1>
+
+### Contributers
+<a href="https://github.com/timothyspriegade/8stash/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=timothyspriegade/8stash" />
+</a>
+
+Thanks for contributing to 8Stash—every issue, discussion, and PR helps make it better. Happy hacking!
 
 ### Disclaimer
 This project is my first experience with Go, so the code quality and structure may not be optimal. I am continuously learning and improving, and any feedback, suggestions, or contributions are always welcome and appreciated!
 <h1>
 </h1>
 
-Thanks for contributing to 8Stash—every issue, discussion, and PR helps make it better. Happy hacking!
+
