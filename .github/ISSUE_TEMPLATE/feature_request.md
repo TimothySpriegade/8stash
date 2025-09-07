@@ -1,20 +1,24 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
-title: ''
+name: 'feature Request'
+about: A feature request
+title: "[FEATURE] Change Title"
 labels: ''
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+**Description**
+---
+Summarizes the feature, providing context and motivation for why the feature is needed.
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+**Expected Behavior**
+---
+ Details what should happen when the feature is implemented, describing the intended user experience and outcomes
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+**Acceptance Criteria**
+---
+Lists the specific, testable requirements that must be met for the feature to be considered complete
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+**Additional Information**
+---
+Additional information that you would like to present to the reader of the issues.
