@@ -1,7 +1,9 @@
 package test
 
 import (
+	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -57,4 +59,35 @@ func SetupTestRepo(t *testing.T) (string, func()) {
 		_ = os.RemoveAll(localPath)
 	}
 	return localPath, cleanup
+}
+
+func CreateAndPushStashBranch(t *testing.T, repo *git.Repository, wt *git.Worktree, localPath, fullBranchName, fileName, content string, when time.Time) {
+	t.Helper()
+
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(fullBranchName),
+		Create: true,
+	}))
+	require.NoError(t, os.WriteFile(filepath.Join(localPath, fileName), []byte(content), 0o644))
+	_, err := wt.Add(fileName)
+	require.NoError(t, err)
+	_, err = wt.Commit("stash "+fullBranchName, &git.CommitOptions{
+		Author: &object.Signature{Name: "S", Email: "s@example.com", When: when},
+	})
+	require.NoError(t, err)
+	require.NoError(t, repo.Push(&git.PushOptions{
+		RemoteName: "origin",
+		RefSpecs:   []config.RefSpec{config.RefSpec("refs/heads/" + fullBranchName + ":refs/heads/" + fullBranchName)},
+	}))
+	require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName("main"),
+	}))
+}
+
+func FetchAll(t *testing.T, repo *git.Repository) {
+	t.Helper()
+	err := repo.Fetch(&git.FetchOptions{RemoteName: "origin"})
+	if err != nil && !errors.Is(err, git.NoErrAlreadyUpToDate) {
+		require.NoError(t, err)
+	}
 }
