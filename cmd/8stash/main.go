@@ -1,13 +1,14 @@
 package main
 
 import (
-	"8stash/internal/service"
-	"8stash/internal/validation"
 	"fmt"
 	"os"
 	"strconv"
 
 	flag "github.com/spf13/pflag"
+
+	"8stash/internal/service"
+	"8stash/internal/validation"
 )
 
 var operation string
@@ -39,6 +40,8 @@ func Init() int {
 		return list()
 	case "drop":
 		return drop()
+	case "cleanup":
+		return cleanup()
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown operation: %v\n", operation)
 		os.Exit(1)
@@ -79,6 +82,14 @@ func pop() int {
 
 func drop() int {
 	if err := service.HandleDrop(strconv.Itoa(stashNumber)); err != nil {
+		return 1
+	}
+	return 0
+}
+
+func cleanup() int {
+	if err := service.HandleCleanup(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error during cleanup operation: %v\n", err)
 		return 1
 	}
 	return 0

@@ -1,0 +1,65 @@
+package service
+
+import (
+	"fmt"
+
+	"8stash/internal/gitx"
+)
+
+const cleanupTime = 30
+
+func HandleCleanup() error {
+	if err := gitx.UpdateRepository(); err != nil {
+		return fmt.Errorf("updating repository: %w", err)
+	}
+
+	stashes, err := gitx.GetBranchesWithStringName(BranchPrefix)
+	if err != nil {
+		return fmt.Errorf("get branches with prefix %s: %w", BranchPrefix, err)
+	}
+	fmt.Println("Cleaning up old stashes...")
+
+	if len(stashes) == 0 {
+		fmt.Println("No stashes found to clean up.")
+		return nil
+	}
+
+	filtered := filterBranches(stashes, cleanupTime)
+	if len(filtered) == 0 {
+		fmt.Println("No stashes found older than the cleanup time.")
+		return nil
+	}
+
+	fmt.Printf("Found %d stashes, checking for those older than %d days...\n", len(stashes), cleanupTime)
+
+	for branch := range filtered {
+		fmt.Printf("Dropping stash branch: %s\n", branch)
+		if err := gitx.DeleteBranch(branch); err != nil {
+			return fmt.Errorf("drop branch %s: %w", branch, err)
+		}
+	}
+
+	fmt.Println("Cleanup completed successfully.")
+	return nil
+}
+
+func filterBranches(branches map[string]string, ageLimit int) map[string]string {
+	filtered := make(map[string]string)
+	for branch, age := range branches {
+		if ageInt, err := parseDayString(age); err != nil {
+			continue
+		} else if ageInt >= ageLimit {
+			filtered[branch] = age
+		}
+	}
+	return filtered
+}
+
+func parseDayString(dayString string) (int, error) {
+	var days int
+	_, err := fmt.Sscanf(dayString, "%d days ago", &days)
+	if err != nil {
+		return 0, fmt.Errorf("parsing day string %s: %w", dayString, err)
+	}
+	return days, nil
+}

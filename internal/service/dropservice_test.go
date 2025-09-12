@@ -1,13 +1,14 @@
 package service
 
 import (
-	"8stash/internal/test"
 	"testing"
 	"time"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"8stash/internal/test"
 )
 
 func TestHandleDrop_Succeeds(t *testing.T) {
