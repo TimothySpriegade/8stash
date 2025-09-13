@@ -1,7 +1,6 @@
 package service
 
 import (
-	"8stash/internal/test"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +9,9 @@ import (
 	"github.com/go-git/go-git/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"8stash/internal/constants"
+	"8stash/internal/test"
 )
 
 func TestHandlePush_Succeeds(t *testing.T) {
@@ -31,7 +33,7 @@ func TestHandlePush_Succeeds(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	assert.NotEmpty(t, stashName)
-	assert.True(t, len(stashName) > len(BranchPrefix) && stashName[:len(BranchPrefix)] == BranchPrefix)
+	assert.True(t, len(stashName) > len(constants.BranchPrefix) && stashName[:len(constants.BranchPrefix)] == constants.BranchPrefix)
 
 	remote, err := repo.Remote("origin")
 	require.NoError(t, err)

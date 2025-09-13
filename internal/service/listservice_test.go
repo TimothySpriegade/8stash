@@ -1,7 +1,6 @@
 package service
 
 import (
-	"8stash/internal/test"
 	"bytes"
 	"io"
 	"os"
@@ -11,6 +10,9 @@ import (
 	"github.com/go-git/go-git/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"8stash/internal/constants"
+	"8stash/internal/test"
 )
 
 func TestHandleList_PrintsStashes(t *testing.T) {
@@ -23,8 +25,8 @@ func TestHandleList_PrintsStashes(t *testing.T) {
 	wt, err := repo.Worktree()
 	require.NoError(t, err)
 
-	test.CreateAndPushStashBranch(t, repo, wt, localPath, BranchPrefix+"one", "one.txt", "1", time.Now().Add(-2*time.Hour))
-	test.CreateAndPushStashBranch(t, repo, wt, localPath, BranchPrefix+"two", "two.txt", "2", time.Now().Add(-1*time.Hour))
+	test.CreateAndPushStashBranch(t, repo, wt, localPath, constants.BranchPrefix+"one", "one.txt", "1", time.Now().Add(-2*time.Hour))
+	test.CreateAndPushStashBranch(t, repo, wt, localPath, constants.BranchPrefix+"two", "two.txt", "2", time.Now().Add(-1*time.Hour))
 
 	// ensure local has remote refs
 	test.FetchAll(t, repo)
@@ -37,8 +39,8 @@ func TestHandleList_PrintsStashes(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	assert.Contains(t, out, "Available stashes:")
-	assert.Contains(t, out, BranchPrefix+"one")
-	assert.Contains(t, out, BranchPrefix+"two")
+	assert.Contains(t, out, constants.BranchPrefix+"one")
+	assert.Contains(t, out, constants.BranchPrefix+"two")
 }
 
 func captureOutput(t *testing.T, fn func()) string {

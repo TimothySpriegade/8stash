@@ -4,18 +4,17 @@ import (
 	"fmt"
 
 	"8stash/internal/gitx"
+	"8stash/internal/constants"
 )
-
-const cleanupTime = 30
 
 func HandleCleanup() error {
 	if err := gitx.UpdateRepository(); err != nil {
 		return fmt.Errorf("updating repository: %w", err)
 	}
 
-	stashes, err := gitx.GetBranchesWithStringName(BranchPrefix)
+	stashes, err := gitx.GetBranchesWithStringName(constants.BranchPrefix)
 	if err != nil {
-		return fmt.Errorf("get branches with prefix %s: %w", BranchPrefix, err)
+		return fmt.Errorf("get branches with prefix %s: %w", constants.BranchPrefix, err)
 	}
 	fmt.Println("Cleaning up old stashes...")
 
@@ -24,13 +23,13 @@ func HandleCleanup() error {
 		return nil
 	}
 
-	filtered := filterBranches(stashes, cleanupTime)
+	filtered := filterBranches(stashes, constants.CleanUpTimeInDays)
 	if len(filtered) == 0 {
 		fmt.Println("No stashes found older than the cleanup time.")
 		return nil
 	}
 
-	fmt.Printf("Found %d stashes, checking for those older than %d days...\n", len(stashes), cleanupTime)
+	fmt.Printf("Found %d stashes, checking for those older than %d days...\n", len(stashes), constants.CleanUpTimeInDays)
 
 	for branch := range filtered {
 		fmt.Printf("Dropping stash branch: %s\n", branch)

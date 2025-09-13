@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"8stash/internal/test"
+	"8stash/internal/constants"
 )
 
 func TestHandleCleanup_NoStashes_Succeeds(t *testing.T) {
@@ -40,8 +41,8 @@ func TestHandleCleanup_NoOldStashes_NoDeletion(t *testing.T) {
 	require.NoError(t, err)
 
 	newer := time.Now().Add(-10 * 24 * time.Hour)
-	test.CreateAndPushStashBranch(t, repo, wt, localPath, BranchPrefix+"new1", "n1.txt", "N1", newer)
-	test.CreateAndPushStashBranch(t, repo, wt, localPath, BranchPrefix+"new2", "n2.txt", "N2", newer)
+	test.CreateAndPushStashBranch(t, repo, wt, localPath, constants.BranchPrefix+"new1", "n1.txt", "N1", newer)
+	test.CreateAndPushStashBranch(t, repo, wt, localPath, constants.BranchPrefix+"new2", "n2.txt", "N2", newer)
 	require.NoError(t, wt.Checkout(&git.CheckoutOptions{Branch: plumbing.NewBranchReferenceName("main")}))
 	test.FetchAll(t, repo)
 
@@ -65,8 +66,8 @@ func TestHandleCleanup_NoOldStashes_NoDeletion(t *testing.T) {
 		return false
 	}
 
-	assert.True(t, has(refs, "refs/heads/"+BranchPrefix+"new1"))
-	assert.True(t, has(refs, "refs/heads/"+BranchPrefix+"new2"))
+	assert.True(t, has(refs, "refs/heads/"+constants.BranchPrefix+"new1"))
+	assert.True(t, has(refs, "refs/heads/"+constants.BranchPrefix+"new2"))
 }
 
 func TestHandleCleanup_DeletesOnlyOldStashes(t *testing.T) {
@@ -82,9 +83,9 @@ func TestHandleCleanup_DeletesOnlyOldStashes(t *testing.T) {
 	oldWhen := time.Now().Add(-30 * 24 * time.Hour)
 	newWhen := time.Now().Add(-5 * 24 * time.Hour)
 
-	old1 := BranchPrefix + "old1"
-	old2 := BranchPrefix + "old2"
-	new1 := BranchPrefix + "new1"
+	old1 := constants.BranchPrefix + "old1"
+	old2 := constants.BranchPrefix + "old2"
+	new1 := constants.BranchPrefix + "new1"
 
 	test.CreateAndPushStashBranch(t, repo, wt, localPath, old1, "o1.txt", "O1", oldWhen)
 	test.CreateAndPushStashBranch(t, repo, wt, localPath, old2, "o2.txt", "O2", oldWhen)
@@ -131,7 +132,7 @@ func TestHandleCleanup_DeleteOldCurrentBranch_ReturnsError(t *testing.T) {
 	wt, err := repo.Worktree()
 	require.NoError(t, err)
 
-	old := BranchPrefix + "current-old"
+	old := constants.BranchPrefix + "current-old"
 	oldWhen := time.Now().Add(-30 * 24 * time.Hour)
 	test.CreateAndPushStashBranch(t, repo, wt, localPath, old, "c.txt", "C", oldWhen)
 
@@ -159,7 +160,7 @@ func TestFilterBranches_FiltersOnlyDaysAgoAndOlderOrEqual(t *testing.T) {
 		"b5": "3 hours ago", // drop (not 'days')
 		"b6": "invalid",     // drop (parse error)
 	}
-	out := filterBranches(branches, cleanupTime)
+	out := filterBranches(branches, constants.CleanUpTimeInDays)
 
 	require.Len(t, out, 2)
 	assert.Equal(t, "30 days ago", out["b1"])

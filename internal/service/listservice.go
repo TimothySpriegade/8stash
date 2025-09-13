@@ -1,12 +1,12 @@
 package service
 
 import (
-	"8stash/internal/gitx"
 	"fmt"
 	"sort"
-)
 
-const BranchPrefix = "8stash/"
+	"8stash/internal/constants"
+	"8stash/internal/gitx"
+)
 
 func HandleList() error {
 	if err := gitx.UpdateRepository(); err != nil {
@@ -24,7 +24,7 @@ func Retrieve8stashList() (map[string]string, error) {
 	if err := gitx.UpdateRepository(); err != nil {
 		return nil, err
 	}
-	mapOfListAndTime, err := gitx.GetBranchesWithStringName(BranchPrefix)
+	mapOfListAndTime, err := gitx.GetBranchesWithStringName(constants.BranchPrefix)
 	if err != nil {
 		return nil, err
 	}
