@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"8stash/internal/constants"
+	"8stash/internal/config"
 	"8stash/internal/test"
 )
 
@@ -33,7 +33,7 @@ func TestHandlePush_Succeeds(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 	assert.NotEmpty(t, stashName)
-	assert.True(t, len(stashName) > len(constants.BranchPrefix) && stashName[:len(constants.BranchPrefix)] == constants.BranchPrefix)
+	assert.True(t, len(stashName) > len(config.BranchPrefix) && stashName[:len(config.BranchPrefix)] == config.BranchPrefix)
 
 	remote, err := repo.Remote("origin")
 	require.NoError(t, err)

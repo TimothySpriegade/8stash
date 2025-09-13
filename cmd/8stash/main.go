@@ -7,6 +7,7 @@ import (
 
 	flag "github.com/spf13/pflag"
 
+	"8stash/internal/config"
 	"8stash/internal/service"
 	"8stash/internal/validation"
 )
@@ -22,6 +23,8 @@ func main() {
 func Init() int {
 	flag.Parse()
 	args := flag.Args()
+
+	config.LoadConfig(config.ConfigName)
 
 	operation, stashNumber, validationError = validation.ArgValidation(args)
 	if validationError != nil {

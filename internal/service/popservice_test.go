@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"8stash/internal/test"
-	"8stash/internal/constants"
+	"8stash/internal/config"
 )
 
 func TestHandlePop_NoStashes_Error(t *testing.T) {
@@ -42,8 +42,8 @@ func TestHandlePop_Multiple_ZeroNumber_Error(t *testing.T) {
 	wt, err := repo.Worktree()
 	require.NoError(t, err)
 
-	test.CreateAndPushStashBranch(t, repo, wt, localPath, constants.BranchPrefix+"111", "a.txt", "A", time.Now())
-	test.CreateAndPushStashBranch(t, repo, wt, localPath, constants.BranchPrefix+"222", "b.txt", "B", time.Now())
+	test.CreateAndPushStashBranch(t, repo, wt, localPath, config.BranchPrefix+"111", "a.txt", "A", time.Now())
+	test.CreateAndPushStashBranch(t, repo, wt, localPath, config.BranchPrefix+"222", "b.txt", "B", time.Now())
 	test.FetchAll(t, repo)
 
 	// Act
@@ -64,7 +64,7 @@ func TestHandlePop_Single_ZeroNumber_Succeeds(t *testing.T) {
 	wt, err := repo.Worktree()
 	require.NoError(t, err)
 
-	branchName := constants.BranchPrefix + "solo"
+	branchName := config.BranchPrefix + "solo"
 	fileName := "solo.txt"
 	content := "hello"
 
@@ -106,8 +106,8 @@ func TestHandlePop_SelectByNumber_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 
 	// two stashes
-	test.CreateAndPushStashBranch(t, repo, wt, localPath, constants.BranchPrefix+"111", "x.txt", "X", time.Now())
-	test.CreateAndPushStashBranch(t, repo, wt, localPath, constants.BranchPrefix+"222", "y.txt", "Y", time.Now())
+	test.CreateAndPushStashBranch(t, repo, wt, localPath, config.BranchPrefix+"111", "x.txt", "X", time.Now())
+	test.CreateAndPushStashBranch(t, repo, wt, localPath, config.BranchPrefix+"222", "y.txt", "Y", time.Now())
 	test.FetchAll(t, repo)
 
 	// Act
@@ -122,9 +122,9 @@ func TestHandlePop_SelectByNumber_Succeeds(t *testing.T) {
 	var has111, has222 bool
 	for _, r := range refs {
 		switch r.Name().String() {
-		case "refs/heads/" + constants.BranchPrefix + "111":
+		case "refs/heads/" + config.BranchPrefix + "111":
 			has111 = true
-		case "refs/heads/" + constants.BranchPrefix + "222":
+		case "refs/heads/" + config.BranchPrefix + "222":
 			has222 = true
 		}
 	}
@@ -148,7 +148,7 @@ func TestHandlePop_DivergedBranches_TriggersMerge(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create and push a stash branch with one file
-	stashBranch := constants.BranchPrefix + "diverge"
+	stashBranch := config.BranchPrefix + "diverge"
 	stashFile := "stash.txt"
 	stashContent := "stash content"
 	test.CreateAndPushStashBranch(t, repo, wt, localPath, stashBranch, stashFile, stashContent, time.Now())
@@ -191,7 +191,7 @@ func TestHandlePop_DivergedBranches_MergeConflict(t *testing.T) {
 	wt, err := repo.Worktree()
 	require.NoError(t, err)
 
-	stashBranch := constants.BranchPrefix + "conflict"
+	stashBranch := config.BranchPrefix + "conflict"
 	fileName := "conflict.txt"
 	test.CreateAndPushStashBranch(t, repo, wt, localPath, stashBranch, fileName, "stash change", time.Now())
 

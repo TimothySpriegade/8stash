@@ -6,7 +6,7 @@ import (
 
 	"8stash/internal/gitx"
 	"8stash/internal/validation"
-	"8stash/internal/constants"
+	"8stash/internal/config"
 )
 
 func HandlePop(stashNumber string) error {
@@ -55,7 +55,7 @@ func popStash(stashNumber string, stashes map[string]string) error {
 		return nil
 	}
 
-	branchName := constants.BranchPrefix + stashNumber
+	branchName := config.BranchPrefix + stashNumber
 	return applyAndRemoveStash(branchName)
 }
 

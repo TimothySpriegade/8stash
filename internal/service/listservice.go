@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"8stash/internal/constants"
+	"8stash/internal/config"
 	"8stash/internal/gitx"
 )
 
@@ -24,7 +24,7 @@ func Retrieve8stashList() (map[string]string, error) {
 	if err := gitx.UpdateRepository(); err != nil {
 		return nil, err
 	}
-	mapOfListAndTime, err := gitx.GetBranchesWithStringName(constants.BranchPrefix)
+	mapOfListAndTime, err := gitx.GetBranchesWithStringName(config.BranchPrefix)
 	if err != nil {
 		return nil, err
 	}

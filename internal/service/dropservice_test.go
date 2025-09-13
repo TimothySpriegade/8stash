@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"8stash/internal/test"
-	"8stash/internal/constants"
+	"8stash/internal/config"
 )
 
 func TestHandleDrop_Succeeds(t *testing.T) {
@@ -23,7 +23,7 @@ func TestHandleDrop_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 
 	branchToDrop := "droppable"
-	fullBranchName := constants.BranchPrefix + branchToDrop
+	fullBranchName := config.BranchPrefix + branchToDrop
 	test.CreateAndPushStashBranch(t, repo, wt, localPath, fullBranchName, "drop.txt", "content", time.Now())
 	test.FetchAll(t, repo)
 
