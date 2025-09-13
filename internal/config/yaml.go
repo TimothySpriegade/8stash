@@ -28,11 +28,9 @@ func (c *YamlConfig) validate() error {
 func LoadConfig(path string) error {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Println("No 8stash config found")
 		return nil
 	}
 
-	fmt.Println("trying to load 8stash config")
 	var cfg YamlConfig
 	if err := yaml.Unmarshal(b, &cfg); err != nil {
 		return fmt.Errorf("parsing config: %w", err)
