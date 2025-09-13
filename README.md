@@ -101,6 +101,26 @@ Use the 'help' command for further detailed usage instructions.
 <h1>
 </h1>
 
+### Optional Configuration
+
+8Stash can be optionally configured with a YAML file. This allows you to override a few runtime defaults (currently cleanup retention and stash branch prefix) without changing code.
+
+Where to put the file
+- Repository-local: .8stash.yaml in the repository root
+
+Config file formats supported: .8stash.yaml
+
+Example config
+```yaml
+# .8stash.yaml (repo root)
+retention_days: 7
+branch_prefix: "my-stash"
+```
+
+If no configuration is provided, 8Stash will use the configured defaults, which can be found in the 8Stash/internal/config/const.go file.
+<h1>
+</h1>
+
 ### Contributing & Local Setup
 
 Contributions are welcome. 8Stash aims to be a simple and reliable CLI for sharing work in progress.
