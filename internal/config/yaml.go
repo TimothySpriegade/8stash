@@ -8,9 +8,20 @@ import (
 	yaml "go.yaml.in/yaml/v4"
 )
 
+type HashType string
+
+const (
+	HashNumeric HashType = "numeric"
+	HashUUID HashType = "uuid"
+)
+
 type YamlConfig struct {
-	CustomBranchPrefix string `yaml:"branch_prefix"`
-	RetentionDays      int    `yaml:"retention_days"`
+    CustomBranchPrefix string `yaml:"branch_prefix"`
+    RetentionDays      int    `yaml:"retention_days"`
+    Naming struct {
+        HashType HashType `yaml:"hash_type"`
+        Length   int      `yaml:"length"`
+    } `yaml:"naming"`
 }
 
 func (c *YamlConfig) sanitize() {

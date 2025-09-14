@@ -10,9 +10,12 @@ func HandlePush() (string, error) {
 		return "", err
 	}
 
-	stashName := naming.BuildStashHash()
+	stashName, err := naming.BuildStashHash()
+	if err != nil {
+		return "", err
+	}
 
-	err := gitx.StashChangesToNewBranch(stashName)
+	err = gitx.StashChangesToNewBranch(stashName)
 	if err != nil {
 		return "", err
 	}

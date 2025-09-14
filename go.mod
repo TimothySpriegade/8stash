@@ -8,6 +8,8 @@ require (
 	github.com/stretchr/testify v1.11.1
 )
 
+require github.com/google/uuid v1.6.0 
+
 require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect

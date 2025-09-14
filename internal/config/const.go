@@ -8,6 +8,8 @@ const ConfigName = ".8stash.yaml"
 
 var BranchPrefix = "8stash/"
 var CleanUpTimeInDays = 30
+var NamingHashType = HashNumeric
+var HashRange = 9999
 
 func UpdateConstByConfig(cfg *YamlConfig) {
 	if p := strings.TrimSpace(cfg.CustomBranchPrefix); p != "" {
