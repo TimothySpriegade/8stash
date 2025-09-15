@@ -11,12 +11,33 @@ var CleanUpTimeInDays = 30
 var NamingHashType = HashNumeric
 var HashRange = 9999
 
-func UpdateConstByConfig(cfg *YamlConfig) {
-	if p := strings.TrimSpace(cfg.CustomBranchPrefix); p != "" {
+func UpdateApplicationConfiguration(cfg *YamlConfig) {
+	updateBranchPrefix(cfg.CustomBranchPrefix)
+	updateCleanupRetentionTime(cfg.RetentionDays)
+	updateNamingHashType(cfg.Naming.HashType)
+	updateHashRange(cfg.Naming.Range, cfg.Naming.HashType)
+}
+
+func updateHashRange(i int, ht HashType) {
+	if i > MinNumericRange && ht == HashNumeric{
+		HashRange = i
+	}
+}
+
+func updateBranchPrefix(s string) {
+	if p := strings.TrimSpace(s); p != "" {
 		BranchPrefix = p + "/"
 	}
+}
 
-	if cfg.RetentionDays > 0 {
-		CleanUpTimeInDays = cfg.RetentionDays
+func updateCleanupRetentionTime(i int) {
+	if i > 0 {
+		CleanUpTimeInDays = i
+	}
+}
+
+func updateNamingHashType(h HashType) {
+	if h != "" {
+		NamingHashType = h
 	}
 }

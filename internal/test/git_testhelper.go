@@ -91,3 +91,12 @@ func FetchAll(t *testing.T, repo *git.Repository) {
 		require.NoError(t, err)
 	}
 }
+
+func WriteTempFile(t *testing.T, content string) string {
+    t.Helper()
+    f, err := os.CreateTemp("", "8stash-config-*.yaml")
+    require.NoError(t, err)
+    require.NoError(t, os.WriteFile(f.Name(), []byte(content), 0o644))
+    require.NoError(t, f.Close())
+    return f.Name()
+}
