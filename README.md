@@ -131,6 +131,8 @@ naming:
 *   The application will print a warning and clamp the value if `hash_numeric_max_value` is set above `10,000,000,000`.
 *   Invalid values in the config file will cause the application to fall back to the default settings for that specific key.
 
+<h1>
+</h1>
 
 ### Contributing & Local Setup
 
