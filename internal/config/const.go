@@ -1,10 +1,13 @@
 package config
 
 import (
+	"math"
 	"strings"
 )
 
 const ConfigName = ".8stash.yaml"
+const MaxNumericrange = math.MaxInt32
+const MinNumericRange = 1
 
 var BranchPrefix = "8stash/"
 var CleanUpTimeInDays = 30

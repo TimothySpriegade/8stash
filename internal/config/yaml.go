@@ -11,8 +11,7 @@ import (
 
 type HashType string
 
-const MaxNumericrange = 10_000_000_000
-const MinNumericRange = 1
+
 const (
 	HashNumeric HashType = "numeric"
 	HashUUID    HashType = "uuid"
