@@ -103,23 +103,34 @@ Use the 'help' command for further detailed usage instructions.
 
 ### Optional Configuration
 
-8Stash can be optionally configured with a YAML file. This allows you to override a few runtime defaults (currently cleanup retention and stash branch prefix) without changing code.
+8Stash can be configured via a `.8stash.yaml` file placed in your repository's root directory. This allows you to customize behavior like branch naming and cleanup policies on a per-project basis.
 
-Where to put the file
-- Repository-local: .8stash.yaml in the repository root
+If no `.8stash.yaml` is found, the application will use its default settings.
 
-Config file formats supported: .8stash.yaml
+**Example `.8stash.yaml`:**
 
-Example config
 ```yaml
-# .8stash.yaml (repo root)
-retention_days: 7
-branch_prefix: "my-stash"
+branch_prefix: "project-wip/"
+retention_days: 15
+naming:
+  hash_type: "uuid" # "numeric" or "uuid"
+  hash_numeric_max_value: 99999
 ```
 
-If no configuration is provided, 8Stash will use the configured defaults, which can be found in the 8Stash/internal/config/const.go file.
-<h1>
-</h1>
+#### Configuration Options
+
+| Key                        | Type   | Description                                                                                             | Default      |
+| -------------------------- | ------ | ------------------------------------------------------------------------------------------------------- | ------------ |
+| `branch_prefix`            | string | The prefix for all stash branches created by 8Stash. A trailing `/` is added automatically.             | `8stash/`    |
+| `retention_days`           | int    | The number of days after which a stash is considered "old" and eligible for the `cleanup` command.      | `30`         |
+| `naming.hash_type`         | string | The format for generated stash IDs. Must be either `"numeric"` or `"uuid"`.                             | `"numeric"`  |
+| `naming.hash_numeric_max_value` | int    | The exclusive upper bound for randomly generated numeric stash IDs (e.g., a value of `10000` generates IDs from 0-9999). | `9999`       |
+
+**Notes:**
+*   If `naming.hash_type` is set to `"uuid"`, the `hash_numeric_max_value` is ignored.
+*   The application will print a warning and clamp the value if `hash_numeric_max_value` is set above `10,000,000,000`.
+*   Invalid values in the config file will cause the application to fall back to the default settings for that specific key.
+
 
 ### Contributing & Local Setup
 
