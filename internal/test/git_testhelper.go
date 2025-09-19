@@ -57,6 +57,7 @@ func SetupTestRepo(t *testing.T) (string, func()) {
 		_ = os.Chdir(origWD)
 		_ = os.RemoveAll(remotePath)
 		_ = os.RemoveAll(localPath)
+		
 	}
 	return localPath, cleanup
 }

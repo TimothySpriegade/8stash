@@ -1,10 +1,13 @@
 package service
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
-	"8stash/internal/gitx"
 	"8stash/internal/config"
+	"8stash/internal/gitx"
 )
 
 func HandleCleanup() error {
@@ -30,6 +33,11 @@ func HandleCleanup() error {
 	}
 
 	fmt.Printf("Found %d stashes, checking for those older than %d days...\n", len(stashes), config.CleanUpTimeInDays)
+
+	if !awaitConfirmation() {
+		fmt.Printf("Aborting the cleanup of branches\n")
+		return nil
+	}
 
 	for branch := range filtered {
 		fmt.Printf("Dropping stash branch: %s\n", branch)
@@ -61,4 +69,28 @@ func parseDayString(dayString string) (int, error) {
 		return 0, fmt.Errorf("parsing day string %s: %w", dayString, err)
 	}
 	return days, nil
+}
+
+func awaitConfirmation() bool {
+	if config.SkipConfirmations {
+		return true
+	}
+
+	fmt.Printf("Would you like to continue? [Y/N]\n")
+	buf := bufio.NewReader(os.Stdin)
+	answer, err := buf.ReadBytes('\n')
+
+	if err != nil {
+		fmt.Printf("Something went wrong: %v\n", err)
+		return false
+	}
+
+	trimmedAnswer := strings.TrimSpace(string(answer))
+
+	if strings.ToLower(trimmedAnswer) == "y" {
+		fmt.Printf("continue deleting\n")
+		return true
+	}
+
+	return false
 }

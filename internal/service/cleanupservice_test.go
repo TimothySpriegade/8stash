@@ -4,14 +4,15 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+	"os"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"8stash/internal/test"
 	"8stash/internal/config"
+	"8stash/internal/test"
 )
 
 func TestHandleCleanup_NoStashes_Succeeds(t *testing.T) {
@@ -73,7 +74,9 @@ func TestHandleCleanup_NoOldStashes_NoDeletion(t *testing.T) {
 func TestHandleCleanup_DeletesOnlyOldStashes(t *testing.T) {
 	// Arrange
 	localPath, cleanup := test.SetupTestRepo(t)
+	config.SkipConfirmations = true
 	defer cleanup()
+	defer func() { config.SkipConfirmations = false }()
 
 	repo, err := git.PlainOpen(localPath)
 	require.NoError(t, err)
@@ -125,7 +128,9 @@ func TestHandleCleanup_DeletesOnlyOldStashes(t *testing.T) {
 func TestHandleCleanup_DeleteOldCurrentBranch_ReturnsError(t *testing.T) {
 	// Arrange
 	localPath, cleanup := test.SetupTestRepo(t)
+	config.SkipConfirmations = true
 	defer cleanup()
+	defer func() { config.SkipConfirmations = false }()
 
 	repo, err := git.PlainOpen(localPath)
 	require.NoError(t, err)
@@ -169,4 +174,94 @@ func TestFilterBranches_FiltersOnlyDaysAgoAndOlderOrEqual(t *testing.T) {
 	assert.NotContains(t, out, "b4")
 	assert.NotContains(t, out, "b5")
 	assert.NotContains(t, out, "b6")
+}
+
+func TestHandleCleanup_WithConfirmation_DeletesBranch(t *testing.T) {
+    // Arrange
+    // Mock stdin to simulate user typing "Y"
+    oldStdin := os.Stdin
+    r, w, err := os.Pipe()
+    require.NoError(t, err)
+    os.Stdin = r
+    _, err = w.Write([]byte("Y\n"))
+    require.NoError(t, err)
+    w.Close()
+    localPath, cleanup := test.SetupTestRepo(t)
+    defer cleanup()
+    defer func() { os.Stdin = oldStdin }()
+
+    repo, err := git.PlainOpen(localPath)
+    require.NoError(t, err)
+    wt, err := repo.Worktree()
+    require.NoError(t, err)
+
+    oldWhen := time.Now().Add(-30 * 24 * time.Hour)
+    oldBranchName := config.BranchPrefix + "old-to-delete"
+    test.CreateAndPushStashBranch(t, repo, wt, localPath, oldBranchName, "old.txt", "old", oldWhen)
+    require.NoError(t, wt.Checkout(&git.CheckoutOptions{Branch: plumbing.NewBranchReferenceName("main")}))
+    test.FetchAll(t, repo)
+
+    // Act
+    err = HandleCleanup()
+
+    // Assert
+    require.NoError(t, err)
+    remote, err := repo.Remote("origin")
+    require.NoError(t, err)
+    refs, err := remote.List(&git.ListOptions{})
+    require.NoError(t, err)
+
+    var branchFound bool
+    for _, ref := range refs {
+        if ref.Name().String() == "refs/heads/"+oldBranchName {
+            branchFound = true
+            break
+        }
+    }
+    assert.False(t, branchFound, "Expected old branch to be deleted after confirmation")
+}
+
+func TestHandleCleanup_WithAbort_DoesNotDeleteBranch(t *testing.T) {
+    // Arrange
+    // Mock stdin to simulate user typing "N"
+    oldStdin := os.Stdin
+    r, w, err := os.Pipe()
+    require.NoError(t, err)
+    os.Stdin = r
+    _, err = w.Write([]byte("N\n"))
+    require.NoError(t, err)
+    w.Close()
+    localPath, cleanup := test.SetupTestRepo(t)
+    defer cleanup()
+    defer func() { os.Stdin = oldStdin }()
+
+    repo, err := git.PlainOpen(localPath)
+    require.NoError(t, err)
+    wt, err := repo.Worktree()
+    require.NoError(t, err)
+
+    oldWhen := time.Now().Add(-30 * 24 * time.Hour)
+    oldBranchName := config.BranchPrefix + "old-to-keep"
+    test.CreateAndPushStashBranch(t, repo, wt, localPath, oldBranchName, "old.txt", "old", oldWhen)
+    require.NoError(t, wt.Checkout(&git.CheckoutOptions{Branch: plumbing.NewBranchReferenceName("main")}))
+    test.FetchAll(t, repo)
+
+    // Act
+    err = HandleCleanup()
+
+    // Assert
+    require.NoError(t, err, "HandleCleanup should not error on abort")
+    remote, err := repo.Remote("origin")
+    require.NoError(t, err)
+    refs, err := remote.List(&git.ListOptions{})
+    require.NoError(t, err)
+
+    var branchFound bool
+    for _, ref := range refs {
+        if ref.Name().String() == "refs/heads/"+oldBranchName {
+            branchFound = true
+            break
+        }
+    }
+    assert.True(t, branchFound, "Expected old branch to remain after aborting")
 }

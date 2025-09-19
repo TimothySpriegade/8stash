@@ -13,6 +13,7 @@ var BranchPrefix = "8stash/"
 var CleanUpTimeInDays = 30
 var NamingHashType = HashNumeric
 var HashRange = 9999
+var SkipConfirmations = false
 
 func UpdateApplicationConfiguration(cfg *YamlConfig) {
 	updateBranchPrefix(cfg.CustomBranchPrefix)
