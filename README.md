@@ -127,6 +127,8 @@ naming:
 | `naming.hash_numeric_max_value` | int    | The exclusive upper bound for randomly generated numeric stash IDs (e.g., a value of `10000` generates IDs from 0-9999). | `9999`       |
 
 **Notes:**
+*   The `retention_days` value can be temporarily overridden for a single run by using the `-d` or `--days` flag on the `cleanup` command (e.g., `8stash cleanup -d 10`).
+*   If `naming.hash_type` is set to `"uuid"`, the `hash_numeric_max_value` is ignored.
 *   If `naming.hash_type` is set to `"uuid"`, the `hash_numeric_max_value` is ignored.
 *    The application will print a warning and clamp the value if `hash_numeric_max_value` is set above the maximum supported value (`2,147,483,647`).
 *   Invalid values in the config file will cause the application to fall back to the default settings for that specific key.
