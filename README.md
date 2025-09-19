@@ -128,9 +128,9 @@ naming:
 
 **Notes:**
 *   The `retention_days` value can be temporarily overridden for a single run by using the `-d` or `--days` flag on the `cleanup` command (e.g., `8stash cleanup -d 10`).
+*   Confirmation prompts for the `cleanup` command can be skipped by using the `-y` or `--yes` flag (e.g., `8stash cleanup -y`).
 *   If `naming.hash_type` is set to `"uuid"`, the `hash_numeric_max_value` is ignored.
-*   If `naming.hash_type` is set to `"uuid"`, the `hash_numeric_max_value` is ignored.
-*    The application will print a warning and clamp the value if `hash_numeric_max_value` is set above the maximum supported value (`2,147,483,647`).
+*   The application will print a warning and clamp the value if `hash_numeric_max_value` is set above the maximum supported value (`2,147,483,647`).
 *   Invalid values in the config file will cause the application to fall back to the default settings for that specific key.
 
 <h1>

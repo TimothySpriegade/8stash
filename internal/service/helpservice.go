@@ -3,7 +3,7 @@ package service
 import "fmt"
 
 const spacer = "------------------------------------------------------------------------------------------------------------------------------"
-const formatString = "  %-20s %s\n"
+const formatString = "  %-30s %s\n"
 
 func PrintHelp() {
     fmt.Println("Welcome to 8stash! A simple tool for stashing work-in-progress on remote branches.")
@@ -18,7 +18,7 @@ func PrintHelp() {
     fmt.Printf(formatString, "pop <number?>", "Apply a stash, commit, and delete the remote stash branch.")
     fmt.Printf(formatString, "list", "List all available 8stash branches on the remote.")
     fmt.Printf(formatString, "drop <number>", "Delete a specific remote stash branch.")
-    fmt.Printf(formatString, "cleanup [-d days]", "Delete remote stashes older than the retention period. The -d flag overrides the config.")
+    fmt.Printf(formatString, "cleanup [-d days] [-y]", "Delete old stashes. -d overrides retention, -y skips confirmation.")
     fmt.Printf(formatString, "help", "Show this help message.")
     fmt.Println(spacer)
 

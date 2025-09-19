@@ -45,8 +45,11 @@ func Init() int {
 		//using flagset here because i want to have specific flags for cleanup only
 		cleanupCmd := flag.NewFlagSet("cleanup", flag.ExitOnError)
         var days int
+		var confirmation bool
 		cleanupCmd.IntVarP(&days, "days", "d", config.CleanUpTimeInDays, "Override the cleanup retention period in days")
+		cleanupCmd.BoolVarP(&confirmation, "yes", "y", config.SkipConfirmations, "Decide whether or not to skip the manual confirmation of stash deletion")
 		cleanupCmd.Parse(os.Args[2:])
+		config.UpdateSkipConfirmations(confirmation)
 		return cleanup(days)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown operation: %v\n", operation)

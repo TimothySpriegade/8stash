@@ -45,3 +45,7 @@ func updateNamingHashType(h HashType) {
 		NamingHashType = h
 	}
 }
+
+func UpdateSkipConfirmations(y bool){
+	SkipConfirmations = y
+}
