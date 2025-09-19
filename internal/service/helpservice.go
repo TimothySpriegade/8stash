@@ -18,7 +18,7 @@ func PrintHelp() {
     fmt.Printf(formatString, "pop <number?>", "Apply a stash, commit, and delete the remote stash branch.")
     fmt.Printf(formatString, "list", "List all available 8stash branches on the remote.")
     fmt.Printf(formatString, "drop <number>", "Delete a specific remote stash branch.")
-    fmt.Printf(formatString, "cleanup", "Delete all remote stashes older than the configured retention period.")
+    fmt.Printf(formatString, "cleanup [-d days]", "Delete remote stashes older than the retention period. The -d flag overrides the config.")
     fmt.Printf(formatString, "help", "Show this help message.")
     fmt.Println(spacer)
 

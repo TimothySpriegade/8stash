@@ -16,7 +16,7 @@ var HashRange = 9999
 
 func UpdateApplicationConfiguration(cfg *YamlConfig) {
 	updateBranchPrefix(cfg.CustomBranchPrefix)
-	updateCleanupRetentionTime(cfg.RetentionDays)
+	UpdateCleanupRetentionTime(cfg.RetentionDays)
 	updateNamingHashType(cfg.Naming.HashType)
 	updateHashRange(cfg.Naming.Range, cfg.Naming.HashType)
 }
@@ -33,7 +33,7 @@ func updateBranchPrefix(s string) {
 	}
 }
 
-func updateCleanupRetentionTime(i int) {
+func UpdateCleanupRetentionTime(i int) {
 	if i > 0 {
 		CleanUpTimeInDays = i
 	}

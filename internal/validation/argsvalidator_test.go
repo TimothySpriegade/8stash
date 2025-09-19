@@ -165,3 +165,52 @@ func TestArgValidation_Cleanup_NoNumber_Succeeds(t *testing.T) {
 	assert.Equal(t, "cleanup", op)
 	assert.Equal(t, 0, num)
 }
+
+func TestArgValidation_CleanupFastReturn(t *testing.T) {
+	// Arrange
+    testCases := []struct {
+        name          string
+        args          []string
+        expectedOp    string
+        expectedNum   int
+        shouldError   bool
+    }{
+        {
+            name:          "cleanup with no extra args",
+            args:          []string{"cleanup"},
+            expectedOp:    "cleanup",
+            expectedNum:   0,
+            shouldError:   false,
+        },
+        {
+            name:          "cleanup with flag-like extra args",
+            args:          []string{"cleanup", "-d", "15"},
+            expectedOp:    "cleanup",
+            expectedNum:   0,
+            shouldError:   false,
+        },
+        {
+            name:          "cleanup with different casing",
+            args:          []string{"CLEANUP"},
+            expectedOp:    "cleanup",
+            expectedNum:   0,
+            shouldError:   false,
+        },
+    }
+
+    for _, tc := range testCases {
+        t.Run(tc.name, func(t *testing.T) {
+            // Act
+            op, num, err := ArgValidation(tc.args)
+
+            // Assert
+            if tc.shouldError {
+                require.Error(t, err)
+            } else {
+                require.NoError(t, err)
+                assert.Equal(t, tc.expectedOp, op)
+                assert.Equal(t, tc.expectedNum, num)
+            }
+        })
+    }
+}

@@ -40,6 +40,11 @@ func ArgValidation(args []string) (string, int, error) {
 		return "", 0, errors.New("invalid operation")
 	}
 
+	//need to return manually due to possible optional flag
+    if strings.ToLower(operation) == "cleanup" {
+        return "cleanup", 0, nil
+    }
+
 	hasStashNumberArg := len(args) > 1
 
 	if stashNumberIsRequiered(operation) && !hasStashNumberArg {

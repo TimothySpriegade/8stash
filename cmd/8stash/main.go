@@ -21,16 +21,14 @@ func main() {
 }
 
 func Init() int {
-	flag.Parse()
-	args := flag.Args()
 
-	config.LoadConfig(config.ConfigName)
-
-	operation, stashNumber, validationError = validation.ArgValidation(args)
+	operation, stashNumber, validationError = validation.ArgValidation(os.Args[1:])
 	if validationError != nil {
 		fmt.Fprintf(os.Stderr, "Argument error: %v\n", validationError)
 		return 1
 	}
+
+	config.LoadConfig(config.ConfigName)
 
 	switch operation {
 	case "help":
@@ -44,7 +42,12 @@ func Init() int {
 	case "drop":
 		return drop()
 	case "cleanup":
-		return cleanup()
+		//using flagset here because i want to have specific flags for cleanup only
+		cleanupCmd := flag.NewFlagSet("cleanup", flag.ExitOnError)
+        var days int
+		cleanupCmd.IntVarP(&days, "days", "d", config.CleanUpTimeInDays, "Override the cleanup retention period in days")
+		cleanupCmd.Parse(os.Args[2:])
+		return cleanup(days)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown operation: %v\n", operation)
 		os.Exit(1)
@@ -90,7 +93,8 @@ func drop() int {
 	return 0
 }
 
-func cleanup() int {
+func cleanup(days int) int {
+	config.UpdateCleanupRetentionTime(days)
 	if err := service.HandleCleanup(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error during cleanup operation: %v\n", err)
 		return 1
