@@ -9,8 +9,6 @@ import (
 	"github.com/go-git/go-git/v6/plumbing"
 )
 
-const TimeAuthorSpacer = "~"
-
 func GetBranchesWithStringName(prefix string) (map[string]string, map[string]string, error) {
 	repo, _, _, _, err := getRepoContext()
 	if err != nil {
