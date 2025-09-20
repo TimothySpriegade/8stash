@@ -18,7 +18,7 @@ func HandlePop(stashNumber string) error {
 		return err
 	}
 
-	stashes, err := Retrieve8stashList()
+	stashes, _ , err := Retrieve8stashList()
 	if err != nil {
 		return err
 	}

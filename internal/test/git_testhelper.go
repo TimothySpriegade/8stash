@@ -62,6 +62,29 @@ func SetupTestRepo(t *testing.T) (string, func()) {
 	return localPath, cleanup
 }
 
+func CreateAndPushStashBranchWithAuthor(t *testing.T, repo *git.Repository, wt *git.Worktree, localPath, fullBranchName, fileName, content string, author *object.Signature) {
+    t.Helper()
+
+    require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+        Branch: plumbing.NewBranchReferenceName(fullBranchName),
+        Create: true,
+    }))
+    require.NoError(t, os.WriteFile(filepath.Join(localPath, fileName), []byte(content), 0o644))
+    _, err := wt.Add(fileName)
+    require.NoError(t, err)
+    _, err = wt.Commit("stash "+fullBranchName, &git.CommitOptions{
+        Author: author,
+    })
+    require.NoError(t, err)
+    require.NoError(t, repo.Push(&git.PushOptions{
+        RemoteName: "origin",
+        RefSpecs:   []config.RefSpec{config.RefSpec("refs/heads/" + fullBranchName + ":refs/heads/" + fullBranchName)},
+    }))
+    require.NoError(t, wt.Checkout(&git.CheckoutOptions{
+        Branch: plumbing.NewBranchReferenceName("main"),
+    }))
+}
+
 func CreateAndPushStashBranch(t *testing.T, repo *git.Repository, wt *git.Worktree, localPath, fullBranchName, fileName, content string, when time.Time) {
 	t.Helper()
 

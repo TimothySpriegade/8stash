@@ -29,7 +29,7 @@ func StashChangesToNewBranch(newBranchName string) error {
 		return err
 	}
 	// Commit on the new branch.
-	if err := commitChanges(wt, newBranchName); err != nil {
+	if err := commitChanges(repo, wt, newBranchName); err != nil {
 		return err
 	}
 	// Push the new branch to its remote.
@@ -82,13 +82,32 @@ func stageChanges(wt *git.Worktree) error {
 	return nil
 }
 
-func commitChanges(wt *git.Worktree, branchName string) error {
+func commitChanges(repo *git.Repository,wt *git.Worktree, branchName string) error {
+	var authorName string
+    var authorEmail string
+	cfg, err := repo.Config()
+
+    if err != nil {
+        fmt.Printf("Warning: failed to get git config, using default author: %v\n", err)
+    } else {
+        authorName = cfg.User.Name
+        authorEmail = cfg.User.Email
+    }
+
+    if authorName == "" {
+        authorName = "8stash"
+    }
+
+    if authorEmail == "" {
+        authorEmail = "noreply@local"
+    }
+	
 	if _, err := wt.Commit(
 		fmt.Sprintf("move local changes to branch %s", branchName),
 		&git.CommitOptions{
 			Author: &object.Signature{
-				Name:  "8stash",
-				Email: "noreply@local",
+				Name:  authorName,
+				Email: authorEmail,
 				When:  time.Now(),
 			},
 		},

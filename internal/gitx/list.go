@@ -9,32 +9,35 @@ import (
 	"github.com/go-git/go-git/v6/plumbing"
 )
 
-func GetBranchesWithStringName(prefix string) (map[string]string, error) {
+const TimeAuthorSpacer = "~"
+
+func GetBranchesWithStringName(prefix string) (map[string]string, map[string]string, error) {
 	repo, _, _, _, err := getRepoContext()
 	if err != nil {
-		return nil, err
+		return nil,nil,  err
 	}
 	refs, err := repo.References()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get references: %w", err)
+		return nil, nil, fmt.Errorf("failed to get references: %w", err)
 	}
 	defer refs.Close()
 
-	branches := make(map[string]string)
+	branchToTimeMap := make(map[string]string)
+	branchToAuthorMap := make(map[string]string)
 	now := time.Now()
 
 	err = refs.ForEach(func(ref *plumbing.Reference) error {
-		return processReference(ref, repo, prefix, now, branches)
+		return processReference(ref, repo, prefix, now, branchToTimeMap, branchToAuthorMap)
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("error processing references: %w", err)
+		return nil, nil, fmt.Errorf("error processing references: %w", err)
 	}
 
-	return branches, nil
+	return branchToTimeMap, branchToAuthorMap ,nil
 }
 
-func processReference(ref *plumbing.Reference, repo *git.Repository, prefix string, now time.Time, branches map[string]string) error {
+func processReference(ref *plumbing.Reference, repo *git.Repository, prefix string, now time.Time, brancheToTimeMap map[string]string, branchToAuthorMap map[string]string) error {
 	if !ref.Name().IsRemote() || ref.Type() != plumbing.HashReference {
 		return nil
 	}
@@ -54,7 +57,9 @@ func processReference(ref *plumbing.Reference, repo *git.Repository, prefix stri
 			return fmt.Errorf("failed to get commit for branch %s: %w", branchName, err)
 		}
 		timeSince := now.Sub(commit.Author.When)
-		branches[branchName] = calculateTimeString(timeSince)
+		brancheToTimeMap[branchName] = calculateTimeString(timeSince)
+		branchToAuthorMap[branchName] = commit.Author.Name
+
 	}
 	return nil
 }

@@ -15,7 +15,7 @@ func HandleCleanup() error {
 		return fmt.Errorf("updating repository: %w", err)
 	}
 
-	stashes, err := gitx.GetBranchesWithStringName(config.BranchPrefix)
+	stashes, _ , err := gitx.GetBranchesWithStringName(config.BranchPrefix)
 	if err != nil {
 		return fmt.Errorf("get branches with prefix %s: %w", config.BranchPrefix, err)
 	}
