@@ -38,6 +38,7 @@ func Init() int {
 		pushCmd := flag.NewFlagSet("push", flag.ExitOnError)
 		var commitMessage string
 		pushCmd.StringVarP(&commitMessage, "message", "m", "", "Add a descriptive message to a stash")
+		pushCmd.Parse(os.Args[2:])
 		return push(commitMessage)
 	case "pop":
 		return pop()

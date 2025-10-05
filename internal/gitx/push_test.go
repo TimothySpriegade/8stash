@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"8stash/internal/test"
-
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"8stash/internal/test"
 )
 
 func TestStashChangesToNewBranch(t *testing.T) {
@@ -109,4 +109,50 @@ func TestStashChangesToNewBranch_TargetAlreadyExists_Error(t *testing.T) {
 	// Assert
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "already exists")
+}
+
+func TestStashChangesToNewBranch_WithCustomMessage_UsesCustomMessage(t *testing.T) {
+    // Arrange
+    localPath, cleanup := test.SetupTestRepo(t)
+    defer cleanup()
+    newFilePath := filepath.Join(localPath, "feature.txt")
+    require.NoError(t, os.WriteFile(newFilePath, []byte("new feature"), 0o644))
+    newBranchName := "feature/custom-msg"
+    customMessage := "WIP: implementing new login flow"
+
+    // Act
+    err := StashChangesToNewBranch(newBranchName, customMessage)
+
+    // Assert
+    require.NoError(t, err)
+    repo, err := git.PlainOpen(localPath)
+    require.NoError(t, err)
+    ref, err := repo.Reference(plumbing.NewBranchReferenceName(newBranchName), true)
+    require.NoError(t, err)
+    commit, err := repo.CommitObject(ref.Hash())
+    require.NoError(t, err)
+    assert.Equal(t, customMessage, commit.Message)
+}
+
+func TestStashChangesToNewBranch_WithEmptyMessage_UsesDefaultMessage(t *testing.T) {
+    // Arrange
+    localPath, cleanup := test.SetupTestRepo(t)
+    defer cleanup()
+    newFilePath := filepath.Join(localPath, "feature.txt")
+    require.NoError(t, os.WriteFile(newFilePath, []byte("new feature"), 0o644))
+    newBranchName := "feature/default-msg"
+
+    // Act
+    err := StashChangesToNewBranch(newBranchName, "")
+
+    // Assert
+    require.NoError(t, err)
+    repo, err := git.PlainOpen(localPath)
+    require.NoError(t, err)
+    ref, err := repo.Reference(plumbing.NewBranchReferenceName(newBranchName), true)
+    require.NoError(t, err)
+    commit, err := repo.CommitObject(ref.Hash())
+    require.NoError(t, err)
+    expectedDefaultMsg := fmt.Sprintf("move local changes to branch %s", newBranchName)
+    assert.Equal(t, expectedDefaultMsg, commit.Message)
 }
