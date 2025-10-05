@@ -1,11 +1,12 @@
 package gitx
 
 import (
-	"8stash/internal/test"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"8stash/internal/test"
 
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
@@ -22,7 +23,7 @@ func TestStashChangesToNewBranch(t *testing.T) {
 	newBranchName := "feature/new-stuff"
 
 	// Act
-	err := StashChangesToNewBranch(newBranchName)
+	err := StashChangesToNewBranch(newBranchName, "")
 
 	// Assert
 	require.NoError(t, err) // operation succeeds without error
@@ -62,7 +63,7 @@ func TestStashChangesToNewBranch_EmptyName_Error(t *testing.T) {
 	defer cleanup()
 
 	// Act
-	err := StashChangesToNewBranch("")
+	err := StashChangesToNewBranch("", "")
 
 	// Assert
 	require.Error(t, err)
@@ -75,7 +76,7 @@ func TestStashChangesToNewBranch_TargetEqualsCurrent_Error(t *testing.T) {
 	defer cleanup()
 
 	// Act
-	err := StashChangesToNewBranch("main")
+	err := StashChangesToNewBranch("main", "")
 
 	// Assert
 	require.Error(t, err)
@@ -103,7 +104,7 @@ func TestStashChangesToNewBranch_TargetAlreadyExists_Error(t *testing.T) {
 	}))
 
 	// Act
-	err = StashChangesToNewBranch(exists)
+	err = StashChangesToNewBranch(exists, "")
 
 	// Assert
 	require.Error(t, err)

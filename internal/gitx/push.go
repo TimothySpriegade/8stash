@@ -12,7 +12,7 @@ import (
 	"github.com/go-git/go-git/v6/plumbing/transport/ssh"
 )
 
-func StashChangesToNewBranch(newBranchName string) error {
+func StashChangesToNewBranch(newBranchName string, commitMessage string) error {
 	repo, wt, origBranch, remote, err := getRepoContext()
 	if err != nil {
 		return err
@@ -29,7 +29,7 @@ func StashChangesToNewBranch(newBranchName string) error {
 		return err
 	}
 	// Commit on the new branch.
-	if err := commitChanges(repo, wt, newBranchName); err != nil {
+	if err := commitChanges(repo, wt, newBranchName, commitMessage); err != nil {
 		return err
 	}
 	// Push the new branch to its remote.
@@ -82,28 +82,32 @@ func stageChanges(wt *git.Worktree) error {
 	return nil
 }
 
-func commitChanges(repo *git.Repository,wt *git.Worktree, branchName string) error {
+func commitChanges(repo *git.Repository, wt *git.Worktree, branchName string, commitMessage string) error {
 	var authorName string
-    var authorEmail string
+	var authorEmail string
 	cfg, err := repo.Config()
 
-    if err != nil {
-        fmt.Printf("Warning: failed to get git config, using default author: %v\n", err)
-    } else {
-        authorName = cfg.User.Name
-        authorEmail = cfg.User.Email
-    }
+	if err != nil {
+		fmt.Printf("Warning: failed to get git config, using default author: %v\n", err)
+	} else {
+		authorName = cfg.User.Name
+		authorEmail = cfg.User.Email
+	}
 
-    if authorName == "" {
-        authorName = "8stash"
-    }
+	if authorName == "" {
+		authorName = "8stash"
+	}
 
-    if authorEmail == "" {
-        authorEmail = "noreply@local"
-    }
-	
+	if authorEmail == "" {
+		authorEmail = "noreply@local"
+	}
+
+	if commitMessage == "" {
+		commitMessage = fmt.Sprintf("move local changes to branch %s", branchName)
+	}
+
 	if _, err := wt.Commit(
-		fmt.Sprintf("move local changes to branch %s", branchName),
+		commitMessage,
 		&git.CommitOptions{
 			Author: &object.Signature{
 				Name:  authorName,
