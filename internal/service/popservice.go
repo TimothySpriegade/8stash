@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"8stash/internal/config"
 	"8stash/internal/gitx"
 	"8stash/internal/validation"
-	"8stash/internal/config"
 )
 
 func HandlePop(stashNumber string) error {
@@ -18,7 +18,7 @@ func HandlePop(stashNumber string) error {
 		return err
 	}
 
-	stashes, _ , err := Retrieve8stashList()
+	stashes, _, _, err := Retrieve8stashList()
 	if err != nil {
 		return err
 	}
