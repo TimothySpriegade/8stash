@@ -12,16 +12,17 @@ import (
 	"8stash/internal/validation"
 )
 
-var operation string
-var stashNumber int
-var validationError error
+var (
+	operation       string
+	stashNumber     int
+	validationError error
+)
 
 func main() {
 	os.Exit(Init())
 }
 
 func Init() int {
-
 	operation, stashNumber, validationError = validation.ArgValidation(os.Args[1:])
 	if validationError != nil {
 		fmt.Fprintf(os.Stderr, "Argument error: %v\n", validationError)
@@ -34,7 +35,16 @@ func Init() int {
 	case "help":
 		return help()
 	case "push":
-		return push()
+		pushCmd := flag.NewFlagSet("push", flag.ExitOnError)
+		var commitMessage string
+		pushCmd.StringVarP(&commitMessage, "message", "m", "", "Add a descriptive message to a stash")
+
+		args := []string{}
+		if len(os.Args) > 2 {
+			args = os.Args[2:]
+		}
+		pushCmd.Parse(args)
+		return push(commitMessage)
 	case "pop":
 		return pop()
 	case "list":
@@ -42,9 +52,9 @@ func Init() int {
 	case "drop":
 		return drop()
 	case "cleanup":
-		//using flagset here because i want to have specific flags for cleanup only
+		// using flagset here because i want to have specific flags for cleanup only
 		cleanupCmd := flag.NewFlagSet("cleanup", flag.ExitOnError)
-        var days int
+		var days int
 		var confirmation bool
 		cleanupCmd.IntVarP(&days, "days", "d", config.CleanUpTimeInDays, "Override the cleanup retention period in days")
 		cleanupCmd.BoolVarP(&confirmation, "yes", "y", config.SkipConfirmations, "Decide whether or not to skip the manual confirmation of stash deletion")
@@ -71,8 +81,8 @@ func help() int {
 	return 0
 }
 
-func push() int {
-	var stashName, err = service.HandlePush()
+func push(commitMessage string) int {
+	stashName, err := service.HandlePush(commitMessage)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error during push operation: %v\n", err)
 		return 1

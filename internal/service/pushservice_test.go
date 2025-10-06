@@ -28,7 +28,7 @@ func TestHandlePush_Succeeds(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(localPath, "wip.txt"), []byte("work in progress"), 0o644))
 
 	// Act
-	stashName, err := HandlePush()
+	stashName, err := HandlePush("")
 
 	// Assert
 	require.NoError(t, err)

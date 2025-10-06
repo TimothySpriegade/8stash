@@ -9,33 +9,33 @@ import (
 	"github.com/go-git/go-git/v6/plumbing"
 )
 
-func GetBranchesWithStringName(prefix string) (map[string]string, map[string]string, error) {
+func GetBranchInformationMapsByPrefix(prefix string) (map[string]string, map[string]string, map[string]string, error) {
 	repo, _, _, _, err := getRepoContext()
 	if err != nil {
-		return nil,nil,  err
+		return nil, nil, nil, err
 	}
 	refs, err := repo.References()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get references: %w", err)
+		return nil, nil, nil, fmt.Errorf("failed to get references: %w", err)
 	}
 	defer refs.Close()
 
 	branchToTimeMap := make(map[string]string)
 	branchToAuthorMap := make(map[string]string)
+	branchToMessageMap := make(map[string]string)
 	now := time.Now()
 
 	err = refs.ForEach(func(ref *plumbing.Reference) error {
-		return processReference(ref, repo, prefix, now, branchToTimeMap, branchToAuthorMap)
+		return processReference(ref, repo, prefix, now, branchToTimeMap, branchToAuthorMap, branchToMessageMap)
 	})
-
 	if err != nil {
-		return nil, nil, fmt.Errorf("error processing references: %w", err)
+		return nil, nil, nil, fmt.Errorf("error processing references: %w", err)
 	}
 
-	return branchToTimeMap, branchToAuthorMap ,nil
+	return branchToTimeMap, branchToAuthorMap, branchToMessageMap, nil
 }
 
-func processReference(ref *plumbing.Reference, repo *git.Repository, prefix string, now time.Time, brancheToTimeMap map[string]string, branchToAuthorMap map[string]string) error {
+func processReference(ref *plumbing.Reference, repo *git.Repository, prefix string, now time.Time, brancheToTimeMap map[string]string, branchToAuthorMap map[string]string, branchToMessageMap map[string]string) error {
 	if !ref.Name().IsRemote() || ref.Type() != plumbing.HashReference {
 		return nil
 	}
@@ -57,6 +57,7 @@ func processReference(ref *plumbing.Reference, repo *git.Repository, prefix stri
 		timeSince := now.Sub(commit.Author.When)
 		brancheToTimeMap[branchName] = calculateTimeString(timeSince)
 		branchToAuthorMap[branchName] = commit.Author.Name
+		branchToMessageMap[branchName] = commit.Message
 
 	}
 	return nil

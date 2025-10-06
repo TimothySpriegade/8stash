@@ -5,7 +5,7 @@ import (
 	"8stash/internal/naming"
 )
 
-func HandlePush() (string, error) {
+func HandlePush(commitMessage string) (string, error) {
 	if err := gitx.PrepareRepository(); err != nil {
 		return "", err
 	}
@@ -15,7 +15,7 @@ func HandlePush() (string, error) {
 		return "", err
 	}
 
-	err = gitx.StashChangesToNewBranch(stashName)
+	err = gitx.StashChangesToNewBranch(stashName, commitMessage)
 	if err != nil {
 		return "", err
 	}

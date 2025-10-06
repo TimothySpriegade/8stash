@@ -15,7 +15,7 @@ func HandleCleanup() error {
 		return fmt.Errorf("updating repository: %w", err)
 	}
 
-	stashes, _ , err := gitx.GetBranchesWithStringName(config.BranchPrefix)
+	stashes, _, _, err := gitx.GetBranchInformationMapsByPrefix(config.BranchPrefix)
 	if err != nil {
 		return fmt.Errorf("get branches with prefix %s: %w", config.BranchPrefix, err)
 	}
@@ -79,7 +79,6 @@ func awaitConfirmation() bool {
 	fmt.Printf("Would you like to continue? [Y/N]\n")
 	buf := bufio.NewReader(os.Stdin)
 	answer, err := buf.ReadBytes('\n')
-
 	if err != nil {
 		fmt.Printf("Something went wrong: %v\n", err)
 		return false

@@ -19,6 +19,7 @@ import (
 )
 
 func TestInit_PushCommand_Succeeds(t *testing.T) {
+	// Arrange
 	restoreConfig := snapshotConfig(t)
 	defer restoreConfig()
 
@@ -35,8 +36,11 @@ func TestInit_PushCommand_Succeeds(t *testing.T) {
 	require.NoError(t, os.WriteFile(filePath, []byte("work in progress"), 0o644))
 
 	defer stubArgs(t, "8stash", "push")()
+
+	// Act
 	stdout, stderr, exitCode := runInit(t)
 
+	// Assert
 	require.Equal(t, 0, exitCode)
 	assert.Empty(t, strings.TrimSpace(stderr))
 
@@ -58,6 +62,7 @@ func TestInit_PushCommand_Succeeds(t *testing.T) {
 }
 
 func TestInit_PopCommand_Succeeds(t *testing.T) {
+	// Arrange
 	restoreConfig := snapshotConfig(t)
 	defer restoreConfig()
 
@@ -77,8 +82,11 @@ func TestInit_PopCommand_Succeeds(t *testing.T) {
 	test.FetchAll(t, repo)
 
 	defer stubArgs(t, "8stash", "pop", stashNumber)()
+
+	// Act
 	_, stderr, exitCode := runInit(t)
 
+	// Assert
 	require.Equal(t, 0, exitCode)
 	assert.Empty(t, strings.TrimSpace(stderr))
 
@@ -91,6 +99,7 @@ func TestInit_PopCommand_Succeeds(t *testing.T) {
 }
 
 func TestInit_ListCommand_PrintsStashes(t *testing.T) {
+	// Arrange
 	restoreConfig := snapshotConfig(t)
 	defer restoreConfig()
 
@@ -111,8 +120,11 @@ func TestInit_ListCommand_PrintsStashes(t *testing.T) {
 	test.FetchAll(t, repo)
 
 	defer stubArgs(t, "8stash", "list")()
+
+	// Act
 	stdout, stderr, exitCode := runInit(t)
 
+	// Assert
 	require.Equal(t, 0, exitCode)
 	assert.Empty(t, strings.TrimSpace(stderr))
 	assert.Contains(t, stdout, "Available stashes")
@@ -121,6 +133,7 @@ func TestInit_ListCommand_PrintsStashes(t *testing.T) {
 }
 
 func TestInit_DropCommand_RemovesBranch(t *testing.T) {
+	// Arrange
 	restoreConfig := snapshotConfig(t)
 	defer restoreConfig()
 
@@ -140,8 +153,11 @@ func TestInit_DropCommand_RemovesBranch(t *testing.T) {
 	test.FetchAll(t, repo)
 
 	defer stubArgs(t, "8stash", "drop", stashNumber)()
+
+	// Act
 	_, stderr, exitCode := runInit(t)
 
+	// Assert
 	require.Equal(t, 0, exitCode)
 	assert.Empty(t, strings.TrimSpace(stderr))
 
@@ -150,6 +166,7 @@ func TestInit_DropCommand_RemovesBranch(t *testing.T) {
 }
 
 func TestInit_CleanupCommand_RemovesOldStashes(t *testing.T) {
+	// Arrange
 	restoreConfig := snapshotConfig(t)
 	defer restoreConfig()
 
@@ -170,8 +187,11 @@ func TestInit_CleanupCommand_RemovesOldStashes(t *testing.T) {
 	test.FetchAll(t, repo)
 
 	defer stubArgs(t, "8stash", "cleanup", "-d", "10", "-y")()
+
+	// Act
 	stdout, stderr, exitCode := runInit(t)
 
+	// Assert
 	require.Equal(t, 0, exitCode)
 	assert.Empty(t, strings.TrimSpace(stderr))
 	assert.Contains(t, stdout, "Cleanup completed successfully.")
@@ -182,6 +202,7 @@ func TestInit_CleanupCommand_RemovesOldStashes(t *testing.T) {
 }
 
 func TestInit_HelpCommand_PrintsUsage(t *testing.T) {
+	// Arrange
 	restoreConfig := snapshotConfig(t)
 	defer restoreConfig()
 
@@ -189,12 +210,51 @@ func TestInit_HelpCommand_PrintsUsage(t *testing.T) {
 	defer cleanupRepo()
 
 	defer stubArgs(t, "8stash", "help")()
+
+	// Act
 	stdout, stderr, exitCode := runInit(t)
 
+	// Assert
 	require.Equal(t, 0, exitCode)
 	assert.Empty(t, strings.TrimSpace(stderr))
 	assert.Contains(t, stdout, "Usage:")
 	assert.Contains(t, stdout, "Available Commands:")
+}
+
+func TestInit_PushCommand_WithMessage_StoresMessage(t *testing.T) {
+	// Arrange
+	restoreConfig := snapshotConfig(t)
+	defer restoreConfig()
+
+	localPath, cleanupRepo := test.SetupTestRepo(t)
+	defer cleanupRepo()
+
+	repo, err := git.PlainOpen(localPath)
+	require.NoError(t, err)
+
+	filePath := filepath.Join(localPath, "wip.txt")
+	require.NoError(t, os.WriteFile(filePath, []byte("work in progress"), 0o644))
+
+	customMessage := "implementing new feature X"
+	defer stubArgs(t, "8stash", "push", "-m", customMessage)()
+
+	// Act
+	stdout, stderr, exitCode := runInit(t)
+
+	// Assert
+	require.Equal(t, 0, exitCode)
+	assert.Empty(t, strings.TrimSpace(stderr))
+
+	stashBranch := parseStashBranch(t, stdout)
+	assert.True(t, strings.HasPrefix(stashBranch, config.BranchPrefix))
+
+	test.FetchAll(t, repo)
+	ref, err := repo.Reference(plumbing.NewBranchReferenceName(stashBranch), true)
+	require.NoError(t, err)
+
+	commit, err := repo.CommitObject(ref.Hash())
+	require.NoError(t, err)
+	assert.Equal(t, customMessage, commit.Message)
 }
 
 func runInit(t *testing.T) (string, string, int) {
