@@ -71,8 +71,10 @@ Prerequisites:
 
 Typical workflow:
 1. Save (push): Create a temporary branch from the current HEAD that contains exactly your current uncommitted changes; they are committed on that new branch, the branch is pushed to origin, and your original branch is restored to a clean state locally.
+   - Optionally add a descriptive message to your stash using the `-m` flag: `8stash push -m "implementing login feature"`
+   - The commit message will be displayed when listing stashes, making it easier to identify specific work-in-progress items
 2. Share: Communicate the temporary branch number (e.g. 8stash/8374) to a teammate or switch machines and pull/fetch on the other clone.
-3. List (list): View available stash branches filtered by a naming convention (e.g. all starting with 8stash/) with human‑readable ages to choose the right one.
+3. List (list): View available stash branches filtered by a naming convention (e.g. all starting with 8stash/) with human‑readable ages, author information, and commit messages to choose the right one.
 4. Apply (pop): Re‑apply a chosen stash branch onto your current branch so that its changes appear as unstaged modifications in your working directory; no merge commit and no history rewrite occur.
 5. Clean up: Applied stashes are removed localy and on remote to avoid messy repositories.
 6. Work: Inspect, edit further, stage, and create proper commits as desired.
@@ -80,14 +82,16 @@ Typical workflow:
 
 Behavior characteristics:
 - Divergent histories are now supported: you can apply stashes even if your current branch has diverged from the stash base. The tool will attempt to merge changes, and you may need to resolve conflicts manually.
-- Applying a stash does not advance or modify your current branch’s commit history; it only repopulates the working tree.
+- Applying a stash does not advance or modify your current branch's commit history; it only repopulates the working tree.
 - Relative age displays (e.g. minutes/hours/days ago) are based on the current system clock.
+- Stash commit messages help you identify and organize your work-in-progress items across different contexts.
 
 Ideal use cases:
 - Pair programming driver handoff.
 - Moving unfinished edits between desktop and laptop.
 - Quick review handover without committing partial or experimental changes.
 - Temporary parking of exploratory work prior to reshaping into clean commits.
+- Annotating work-in-progress with descriptive messages for better organization.
 
 Limitations to keep in mind:
 - Not a replacement for long‑lived feature branches.
@@ -98,6 +102,45 @@ Use the 'help' command for further detailed usage instructions.
 ```sh
 8stash help
 ```
+
+#### Command Examples
+
+**Push with a descriptive message:**
+```sh
+8stash push -m "WIP: refactoring user authentication"
+```
+
+**Push without a message (uses default):**
+```sh
+8stash push
+# or simply
+8stash
+```
+
+**List all stashes (shows messages, authors, and timestamps):**
+```sh
+8stash list
+```
+
+**Pop a specific stash:**
+```sh
+8stash pop 8374
+```
+
+**Drop a stash you no longer need:**
+```sh
+8stash drop 8374
+```
+
+**Clean up old stashes:**
+```sh
+8stash cleanup
+# or skip confirmation prompt
+8stash cleanup -y
+# or override retention period
+8stash cleanup -d 7
+```
+
 <h1>
 </h1>
 
