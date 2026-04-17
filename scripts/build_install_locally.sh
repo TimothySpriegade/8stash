@@ -6,7 +6,11 @@ set -euo pipefail
 # - MAIN_PKG: force main package to build (e.g. ./cmd/app)
 # - INSTALL_DIR: install destination (default: ~/bin or ~/.local/bin)
 
-MAIN_PKG=../cmd/8stash
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
+# Default main package if not provided by env.
+: "${MAIN_PKG:=./cmd/8stash}"
 command -v go >/dev/null 2>&1 || { echo "go not found in PATH"; exit 1; }
 
 # Choose install dir
@@ -21,11 +25,10 @@ else
 fi
 mkdir -p "$DEST"
 
-# Detect main package
-if [ -n "${MAIN_PKG:-}" ]; then
+if [ -n "$MAIN_PKG" ]; then
   PKG="$MAIN_PKG"
 else
-  mapfile -t mains < <(go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ./... | sed '/^$/d') || true
+  mapfile -t mains < <(cd "$REPO_ROOT" && go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ./... | sed '/^$/d') || true
   if [ "${#mains[@]}" -ge 1 ]; then
     PKG="${mains[0]}"
   else
@@ -37,7 +40,7 @@ fi
 if [ -n "${BIN_NAME:-}" ]; then
   NAME="$BIN_NAME"
 else
-  mod="$(go list -m -f '{{.Path}}' 2>/dev/null || true)"
+  mod="$(cd "$REPO_ROOT" && go list -m -f '{{.Path}}' 2>/dev/null || true)"
   if [ -n "$mod" ]; then
     NAME="${mod##*/}"
   else
@@ -51,7 +54,7 @@ trap 'rm -rf "$tmpdir"' EXIT
 
 out="$tmpdir/$NAME"
 echo "Building $PKG -> $out"
-GO111MODULE=on go build -trimpath -ldflags "-s -w" -o "$out" "$PKG"
+(cd "$REPO_ROOT" && GO111MODULE=on go build -trimpath -ldflags "-s -w" -o "$out" "$PKG")
 
 # Install (replaces old version if exists)
 echo "Installing to $DEST/$NAME"

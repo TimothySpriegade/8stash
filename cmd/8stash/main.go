@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 
@@ -12,60 +13,109 @@ import (
 	"8stash/internal/validation"
 )
 
-var (
-	operation       string
-	stashNumber     int
-	validationError error
-)
+type commandInput struct {
+	operation   string
+	stashNumber int
+	args        []string
+}
 
 func main() {
 	os.Exit(Init())
 }
 
 func Init() int {
-	operation, stashNumber, validationError = validation.ArgValidation(os.Args[1:])
-	if validationError != nil {
-		fmt.Fprintf(os.Stderr, "Argument error: %v\n", validationError)
+	input, err := parseCommandInput(os.Args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Argument error: %v\n", err)
 		return 1
 	}
 
 	config.LoadConfig(config.ConfigName)
+	return execute(input)
+}
 
-	switch operation {
+func execute(input commandInput) int {
+	switch input.operation {
 	case "help":
 		return help()
 	case "push":
-		pushCmd := flag.NewFlagSet("push", flag.ExitOnError)
-		var commitMessage string
-		pushCmd.StringVarP(&commitMessage, "message", "m", "", "Add a descriptive message to a stash")
-
-		args := []string{}
-		if len(os.Args) > 2 {
-			args = os.Args[2:]
+		commitMessage, err := parsePushFlags(input.args)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Argument error: %v\n", err)
+			return 1
 		}
-		pushCmd.Parse(args)
 		return push(commitMessage)
 	case "pop":
-		return pop()
+		return pop(input.stashNumber)
 	case "list":
 		return list()
 	case "drop":
-		return drop()
+		return drop(input.stashNumber)
 	case "cleanup":
-		// using flagset here because i want to have specific flags for cleanup only
-		cleanupCmd := flag.NewFlagSet("cleanup", flag.ExitOnError)
-		var days int
-		var confirmation bool
-		cleanupCmd.IntVarP(&days, "days", "d", config.CleanUpTimeInDays, "Override the cleanup retention period in days")
-		cleanupCmd.BoolVarP(&confirmation, "yes", "y", config.SkipConfirmations, "Decide whether or not to skip the manual confirmation of stash deletion")
-		cleanupCmd.Parse(os.Args[2:])
+		days, confirmation, err := parseCleanupFlags(input.args)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Argument error: %v\n", err)
+			return 1
+		}
 		config.UpdateSkipConfirmations(confirmation)
 		return cleanup(days)
 	default:
-		fmt.Fprintf(os.Stderr, "Unknown operation: %v\n", operation)
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "Unknown operation: %v\n", input.operation)
+		return 1
 	}
-	return 0
+}
+
+func parseCommandInput(allArgs []string) (commandInput, error) {
+	rawArgs := []string{}
+	if len(allArgs) > 1 {
+		rawArgs = allArgs[1:]
+	}
+
+	operation, stashNumber, err := validation.ArgValidation(rawArgs)
+	if err != nil {
+		return commandInput{}, err
+	}
+
+	return commandInput{
+		operation:   operation,
+		stashNumber: stashNumber,
+		args:        rawArgs,
+	}, nil
+}
+
+func parsePushFlags(args []string) (string, error) {
+	pushCmd := flag.NewFlagSet("push", flag.ContinueOnError)
+	pushCmd.SetOutput(io.Discard)
+	var commitMessage string
+	pushCmd.StringVarP(&commitMessage, "message", "m", "", "Add a descriptive message to a stash")
+
+	if err := pushCmd.Parse(commandArgs(args)); err != nil {
+		return "", err
+	}
+
+	return commitMessage, nil
+}
+
+func parseCleanupFlags(args []string) (int, bool, error) {
+	cleanupCmd := flag.NewFlagSet("cleanup", flag.ContinueOnError)
+	cleanupCmd.SetOutput(io.Discard)
+	var days int
+	var confirmation bool
+	cleanupCmd.IntVarP(&days, "days", "d", config.CleanUpTimeInDays, "Override the cleanup retention period in days")
+	cleanupCmd.BoolVarP(&confirmation, "yes", "y", config.SkipConfirmations, "Decide whether or not to skip the manual confirmation of stash deletion")
+
+	if err := cleanupCmd.Parse(commandArgs(args)); err != nil {
+		return 0, false, err
+	}
+
+	return days, confirmation, nil
+}
+
+func commandArgs(args []string) []string {
+	if len(args) < 2 {
+		return []string{}
+	}
+	return args[1:]
 }
 
 func list() int {
@@ -91,7 +141,7 @@ func push(commitMessage string) int {
 	return 0
 }
 
-func pop() int {
+func pop(stashNumber int) int {
 	if err := service.HandlePop(strconv.Itoa(stashNumber)); err != nil {
 		fmt.Fprintf(os.Stderr, "Error during pop operation: %v\n", err)
 		return 1
@@ -99,7 +149,7 @@ func pop() int {
 	return 0
 }
 
-func drop() int {
+func drop(stashNumber int) int {
 	if err := service.HandleDrop(strconv.Itoa(stashNumber)); err != nil {
 		return 1
 	}

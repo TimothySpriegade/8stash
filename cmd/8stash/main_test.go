@@ -259,9 +259,6 @@ func TestInit_PushCommand_WithMessage_StoresMessage(t *testing.T) {
 
 func runInit(t *testing.T) (string, string, int) {
 	t.Helper()
-	operation = ""
-	stashNumber = 0
-	validationError = nil
 	return captureOutputs(t, func() int { return Init() })
 }
 
