@@ -24,19 +24,19 @@ func StashChangesToNewBranch(newBranchName string, commitMessage string) error {
 	if err := createNewBranchAndSwitch(newBranchName, wt); err != nil {
 		return err
 	}
-	// Stage everything (adds, mods, deletions).
+
 	if err := stageChanges(wt); err != nil {
 		return err
 	}
-	// Commit on the new branch.
+
 	if err := commitChanges(repo, wt, newBranchName, commitMessage); err != nil {
 		return err
 	}
-	// Push the new branch to its remote.
+
 	if err := pushChanges(remote, repo, newBranchName); err != nil {
 		return err
 	}
-	// Switch back to the original branch, discarding working changes there.
+
 	if err := switchToBranch(origBranch, wt); err != nil {
 		return err
 	}
@@ -82,25 +82,31 @@ func stageChanges(wt *git.Worktree) error {
 	return nil
 }
 
+func resolveAuthor(repo *git.Repository) (name, email string) {
+	if cfg, err := repo.Config(); err == nil {
+		name, email = cfg.User.Name, cfg.User.Email
+	}
+	if name == "" || email == "" {
+		if globalCfg, err := config.LoadConfig(config.GlobalScope); err == nil {
+			if name == "" {
+				name = globalCfg.User.Name
+			}
+			if email == "" {
+				email = globalCfg.User.Email
+			}
+		}
+	}
+	if name == "" {
+		name = "8stash"
+	}
+	if email == "" {
+		email = "noreply@local"
+	}
+	return
+}
+
 func commitChanges(repo *git.Repository, wt *git.Worktree, branchName string, commitMessage string) error {
-	var authorName string
-	var authorEmail string
-	cfg, err := repo.Config()
-
-	if err != nil {
-		fmt.Printf("Warning: failed to get git config, using default author: %v\n", err)
-	} else {
-		authorName = cfg.User.Name
-		authorEmail = cfg.User.Email
-	}
-
-	if authorName == "" {
-		authorName = "8stash"
-	}
-
-	if authorEmail == "" {
-		authorEmail = "noreply@local"
-	}
+	authorName, authorEmail := resolveAuthor(repo)
 
 	if commitMessage == "" {
 		commitMessage = fmt.Sprintf("move local changes to branch %s", branchName)
